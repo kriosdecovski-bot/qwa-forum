@@ -38,7 +38,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(uploadDir));
 app.use(express.urlencoded({ extended: true }));
 
-// Сессии через PostgreSQL (сохраняются при рестарте)
+// Сессии
 let sessionConfig = {
   secret: process.env.SESSION_SECRET || 'qwa-secret-key-2025',
   resave: false,
@@ -58,13 +58,15 @@ app.use(session(sessionConfig));
 app.use(addUserToViews);
 
 // Helpers
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) { 
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); 
+}
 
 function stripEmoji(s) {
   return (s||'').replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu,'').trim();
 }
 
-function fmt(text) {
+function formatPost(text) {
   if (!text) return '';
   return text.split('\n').map(line => {
     if (line.startsWith('&gt;') && !line.startsWith('&gt;&gt;'))
@@ -73,7 +75,7 @@ function fmt(text) {
   }).join('<br>');
 }
 
-function fdate(d) {
+function formatDate(d) {
   if (!d) return '';
   const dt = new Date(d);
   const p = n => n.toString().padStart(2,'0');
@@ -85,12 +87,20 @@ function validEmail(e) {
   return ok.includes((e||'').split('@')[1]);
 }
 
-function genCode() { return Math.floor(100000+Math.random()*900000).toString(); }
-function isImg(f) { return f && ['.jpg','.jpeg','.png','.gif','.webp'].includes(path.extname(f).toLowerCase()); }
+function genCode() { 
+  return Math.floor(100000+Math.random()*900000).toString(); 
+}
 
-app.use((req,res,next) => {
-  res.locals.fmt = fmt;
-  res.locals.fdate = fdate;
+function isImg(f) { 
+  return f && ['.jpg','.jpeg','.png','.gif','.webp'].includes(path.extname(f).toLowerCase()); 
+}
+
+// Передаём функции в шаблоны
+app.use((req, res, next) => {
+  res.locals.formatPost = formatPost;
+  res.locals.formatDate = formatDate;
+  res.locals.fdate = formatDate;
+  res.locals.fmt = formatPost;
   res.locals.isImg = isImg;
   next();
 });
@@ -98,7 +108,7 @@ app.use((req,res,next) => {
 // ============ ROUTES ============
 
 // Главная
-app.get('/', async (req,res) => {
+app.get('/', async (req, res) => {
   try {
     const boards = await Q.getAllBoards();
     const stats = await Q.getTotalStats();
@@ -109,215 +119,314 @@ app.get('/', async (req,res) => {
       pc: (await Q.getPostCount(b.slug)).cnt
     })));
     res.render('index', { boards: bws, stats, recent });
-  } catch(e) { console.error(e); res.status(500).send('Ошибка сервера'); }
+  } catch(e) { 
+    console.error(e); 
+    res.status(500).send('Ошибка сервера'); 
+  }
 });
 
 // Поиск
-app.get('/search', async (req,res) => {
+app.get('/search', async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
     const boards = await Q.getAllBoards();
     let results = [];
     if (q.length >= 2) results = await Q.searchThreads(q);
     res.render('search', { boards, query: q, results });
-  } catch(e) { console.error(e); res.status(500).send('Ошибка'); }
+  } catch(e) { 
+    console.error(e); 
+    res.status(500).send('Ошибка'); 
+  }
 });
 
 // Регистрация
-app.get('/register', (req,res) => res.render('register', { error:null, step:'form' }));
+app.get('/register', (req, res) => {
+  res.render('register', { error: null, step: 'form' });
+});
 
-app.post('/register', async (req,res) => {
+app.post('/register', async (req, res) => {
   try {
-    const {username,email,password,password2} = req.body;
-    if (!username||!email||!password) return res.render('register',{error:'Заполните все поля',step:'form'});
-    if (username.length<3||username.length>20) return res.render('register',{error:'Имя от 3 до 20 символов',step:'form'});
-    if (!/^[a-zA-Z0-9_а-яА-ЯёЁ]+$/.test(username)) return res.render('register',{error:'Имя: буквы, цифры, _',step:'form'});
-    if (password.length<6) return res.render('register',{error:'Пароль минимум 6 символов',step:'form'});
-    if (password!==password2) return res.render('register',{error:'Пароли не совпадают',step:'form'});
-    if (!validEmail(email)) return res.render('register',{error:'Принимаются только Gmail, Mail.ru, Yandex',step:'form'});
-    if (await Q.getUserByUsername(username)) return res.render('register',{error:'Имя уже занято',step:'form'});
-    if (await Q.getUserByEmail(email)) return res.render('register',{error:'Почта уже используется',step:'form'});
+    const { username, email, password, password2 } = req.body;
+    
+    if (!username || !email || !password) {
+      return res.render('register', { error: 'Заполните все поля', step: 'form' });
+    }
+    if (username.length < 3 || username.length > 20) {
+      return res.render('register', { error: 'Имя от 3 до 20 символов', step: 'form' });
+    }
+    if (!/^[a-zA-Z0-9_а-яА-ЯёЁ]+$/.test(username)) {
+      return res.render('register', { error: 'Имя: буквы, цифры, _', step: 'form' });
+    }
+    if (password.length < 6) {
+      return res.render('register', { error: 'Пароль минимум 6 символов', step: 'form' });
+    }
+    if (password !== password2) {
+      return res.render('register', { error: 'Пароли не совпадают', step: 'form' });
+    }
+    if (!validEmail(email)) {
+      return res.render('register', { error: 'Принимаются только Gmail, Mail.ru, Yandex', step: 'form' });
+    }
+    
+    const existUser = await Q.getUserByUsername(username);
+    if (existUser) {
+      return res.render('register', { error: 'Имя уже занято', step: 'form' });
+    }
+    
+    const existEmail = await Q.getUserByEmail(email);
+    if (existEmail) {
+      return res.render('register', { error: 'Почта уже используется', step: 'form' });
+    }
 
     const code = genCode();
     await Q.saveVerifyCode(email, code);
     const sent = await sendVerificationCode(email, code);
 
     if (!sent) {
-      const hash = bcrypt.hashSync(password,10);
-      const uid = await Q.createUser(username,email,hash);
+      // Почта не настроена - создаём без верификации
+      const hash = bcrypt.hashSync(password, 10);
+      const uid = await Q.createUser(username, email, hash);
       await Q.verifyUser(uid);
       const u = await Q.getUserById(uid);
-      req.session.user = {id:u.id,username:u.username,email:u.email,role:u.role};
+      req.session.user = { id: u.id, username: u.username, email: u.email, role: u.role };
       return res.redirect('/');
     }
 
-    req.session.pendingUser = {username,email,password};
-    res.render('register', {error:null, step:'verify', email});
-  } catch(e) { console.error(e); res.render('register',{error:'Ошибка сервера',step:'form'}); }
+    req.session.pendingUser = { username, email, password };
+    res.render('register', { error: null, step: 'verify', email });
+  } catch(e) { 
+    console.error(e); 
+    res.render('register', { error: 'Ошибка сервера', step: 'form' }); 
+  }
 });
 
-app.post('/verify', async (req,res) => {
+app.post('/verify', async (req, res) => {
   try {
-    const {code} = req.body;
+    const { code } = req.body;
     const p = req.session.pendingUser;
     if (!p) return res.redirect('/register');
+    
     const saved = await Q.getVerifyCode(p.email);
-    if (!saved||saved.code!==code) return res.render('register',{error:'Неверный код',step:'verify',email:p.email});
-    const hash = bcrypt.hashSync(p.password,10);
-    const uid = await Q.createUser(p.username,p.email,hash);
+    if (!saved || saved.code !== code) {
+      return res.render('register', { error: 'Неверный код', step: 'verify', email: p.email });
+    }
+    
+    const hash = bcrypt.hashSync(p.password, 10);
+    const uid = await Q.createUser(p.username, p.email, hash);
     await Q.verifyUser(uid);
     await Q.deleteVerifyCode(p.email);
     delete req.session.pendingUser;
+    
     const u = await Q.getUserById(uid);
-    req.session.user = {id:u.id,username:u.username,email:u.email,role:u.role};
+    req.session.user = { id: u.id, username: u.username, email: u.email, role: u.role };
     res.redirect('/');
-  } catch(e) { console.error(e); res.redirect('/register'); }
+  } catch(e) { 
+    console.error(e); 
+    res.redirect('/register'); 
+  }
 });
 
 // Вход
-app.get('/login', (req,res) => res.render('login', {error:null, redirect:req.query.redirect||'/'}));
-
-app.post('/login', async (req,res) => {
-  try {
-    const {username,password,redirect} = req.body;
-    const u = await Q.getUserByUsername(username);
-    if (!u||!bcrypt.compareSync(password,u.password_hash))
-      return res.render('login',{error:'Неверный логин или пароль',redirect:redirect||'/'});
-    req.session.user = {id:u.id,username:u.username,email:u.email,role:u.role};
-    res.redirect(redirect||'/');
-  } catch(e) { console.error(e); res.render('login',{error:'Ошибка сервера',redirect:'/'}); }
+app.get('/login', (req, res) => {
+  res.render('login', { error: null, redirect: req.query.redirect || '/' });
 });
 
-app.get('/logout', (req,res) => { req.session.destroy(); res.redirect('/'); });
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password, redirect } = req.body;
+    const u = await Q.getUserByUsername(username);
+    
+    if (!u || !bcrypt.compareSync(password, u.password_hash)) {
+      return res.render('login', { error: 'Неверный логин или пароль', redirect: redirect || '/' });
+    }
+    
+    req.session.user = { id: u.id, username: u.username, email: u.email, role: u.role };
+    res.redirect(redirect || '/');
+  } catch(e) { 
+    console.error(e); 
+    res.render('login', { error: 'Ошибка сервера', redirect: '/' }); 
+  }
+});
+
+app.get('/logout', (req, res) => { 
+  req.session.destroy(); 
+  res.redirect('/'); 
+});
 
 // Профиль
-app.get('/profile', requireAuth, async (req,res) => {
+app.get('/profile', requireAuth, async (req, res) => {
   const user = await Q.getUserById(req.session.user.id);
-  res.render('profile', {user});
+  res.render('profile', { user });
 });
 
-app.get('/user/:username', async (req,res) => {
+app.get('/user/:username', async (req, res) => {
   const user = await Q.getUserByUsername(req.params.username);
   if (!user) return res.status(404).send('<h1>Пользователь не найден</h1><a href="/">Назад</a>');
   const boards = await Q.getAllBoards();
-  res.render('userpage', {user, boards});
+  res.render('userpage', { user, boards });
 });
 
-app.post('/profile/update', requireAuth, async (req,res) => {
-  const about = esc((req.body.about||'').substring(0,500));
+app.post('/profile/update', requireAuth, async (req, res) => {
+  const about = esc((req.body.about || '').substring(0, 500));
   await Q.updateAbout(req.session.user.id, about);
   res.redirect('/profile');
 });
 
 // Админка
-app.get('/admin', requireAdmin, async (req,res) => {
+app.get('/admin', requireAdmin, async (req, res) => {
   const users = await Q.getAllUsers();
   const boards = await Q.getAllBoards();
   const stats = await Q.getTotalStats();
-  res.render('admin', {users,boards,stats});
+  res.render('admin', { users, boards, stats });
 });
 
-app.post('/admin/set-role', requireAdmin, async (req,res) => {
-  if (['user','mod','admin'].includes(req.body.role))
+app.post('/admin/set-role', requireAdmin, async (req, res) => {
+  if (['user', 'mod', 'admin'].includes(req.body.role)) {
     await Q.setUserRole(parseInt(req.body.user_id), req.body.role);
+  }
   res.redirect('/admin');
 });
 
-app.post('/admin/delete-thread', requireAdmin, async (req,res) => {
+app.post('/admin/delete-thread', requireAdmin, async (req, res) => {
   await Q.deleteThread(parseInt(req.body.thread_id));
-  res.redirect('/'+req.body.board_slug+'/');
+  res.redirect('/' + req.body.board_slug + '/');
 });
 
-app.post('/admin/pin-thread', requireAdmin, async (req,res) => {
+app.post('/admin/pin-thread', requireAdmin, async (req, res) => {
   await Q.pinThread(parseInt(req.body.thread_id), parseInt(req.body.pin));
-  res.redirect('/'+req.body.board_slug+'/thread/'+req.body.thread_id);
+  res.redirect('/' + req.body.board_slug + '/thread/' + req.body.thread_id);
 });
 
-app.post('/admin/lock-thread', requireAdmin, async (req,res) => {
+app.post('/admin/lock-thread', requireAdmin, async (req, res) => {
   await Q.lockThread(parseInt(req.body.thread_id), parseInt(req.body.lock));
-  res.redirect('/'+req.body.board_slug+'/thread/'+req.body.thread_id);
+  res.redirect('/' + req.body.board_slug + '/thread/' + req.body.thread_id);
 });
 
-app.post('/admin/delete-post', requireAdmin, async (req,res) => {
+app.post('/admin/delete-post', requireAdmin, async (req, res) => {
   await Q.deletePost(parseInt(req.body.post_id));
-  res.redirect('/'+req.body.board_slug+'/thread/'+req.body.thread_id);
+  res.redirect('/' + req.body.board_slug + '/thread/' + req.body.thread_id);
 });
 
 // Доска
-app.get('/:board/', async (req,res) => {
+app.get('/:board/', async (req, res) => {
   try {
     const board = await Q.getBoard(req.params.board);
     if (!board) return res.status(404).send('<h1>404 -- Раздел не найден</h1><a href="/">На главную</a>');
+    
     const threads = await Q.getThreadsByBoard(board.slug);
     const boards = await Q.getAllBoards();
-    res.render('board', {board,boards,threads});
-  } catch(e) { console.error(e); res.status(500).send('Ошибка'); }
+    res.render('board', { board, boards, threads });
+  } catch(e) { 
+    console.error(e); 
+    res.status(500).send('Ошибка'); 
+  }
 });
 
 // Создание темы
-app.post('/:board/post', requireAuth, upload.single('file'), async (req,res) => {
+app.post('/:board/post', requireAuth, upload.single('file'), async (req, res) => {
   try {
     const board = await Q.getBoard(req.params.board);
     if (!board) return res.status(404).send('Раздел не найден');
-    if (board.admin_only && req.session.user.role!=='admin')
+    
+    if (board.admin_only && req.session.user.role !== 'admin') {
       return res.status(403).send('<h1>Только для администраторов</h1><a href="/">Назад</a>');
-    let {subject,message} = req.body;
-    message = stripEmoji(esc(message||''));
-    subject = stripEmoji(esc(subject||''));
-    if (!message) return res.status(400).send('<h1>Напишите сообщение</h1><a href="/'+board.slug+'/">Назад</a>');
+    }
+    
+    let { subject, message } = req.body;
+    message = stripEmoji(esc(message || ''));
+    subject = stripEmoji(esc(subject || ''));
+    
+    if (!message) {
+      return res.status(400).send('<h1>Напишите сообщение</h1><a href="/' + board.slug + '/">Назад</a>');
+    }
+    
     const u = req.session.user;
     const tid = await Q.createThread(board.slug, subject, u.username, u.id, message);
     await Q.incrementPostCount(u.id);
-    if (req.file) await Q.createPost(tid, board.slug, u.username, u.id, '', req.file.filename);
-    res.redirect('/'+board.slug+'/thread/'+tid);
-  } catch(e) { console.error(e); res.status(500).send('Ошибка'); }
+    
+    if (req.file) {
+      await Q.createPost(tid, board.slug, u.username, u.id, '', req.file.filename);
+    }
+    
+    res.redirect('/' + board.slug + '/thread/' + tid);
+  } catch(e) { 
+    console.error(e); 
+    res.status(500).send('Ошибка'); 
+  }
 });
 
 // Тред
-app.get('/:board/thread/:id', async (req,res) => {
+app.get('/:board/thread/:id', async (req, res) => {
   try {
     const board = await Q.getBoard(req.params.board);
     if (!board) return res.status(404).send('<h1>404</h1><a href="/">Назад</a>');
+    
     const thread = await Q.getThread(parseInt(req.params.id), board.slug);
-    if (!thread) return res.status(404).send('<h1>404 -- Тема не найдена</h1><a href="/'+board.slug+'/">Назад</a>');
+    if (!thread) return res.status(404).send('<h1>404 -- Тема не найдена</h1><a href="/' + board.slug + '/">Назад</a>');
+    
     const posts = await Q.getPostsByThread(thread.id);
     const boards = await Q.getAllBoards();
-    res.render('thread', {board,boards,thread,posts});
-  } catch(e) { console.error(e); res.status(500).send('Ошибка'); }
+    res.render('thread', { board, boards, thread, posts });
+  } catch(e) { 
+    console.error(e); 
+    res.status(500).send('Ошибка'); 
+  }
 });
 
 // Ответ
-app.post('/:board/thread/:id/reply', requireAuth, upload.single('file'), async (req,res) => {
+app.post('/:board/thread/:id/reply', requireAuth, upload.single('file'), async (req, res) => {
   try {
     const board = await Q.getBoard(req.params.board);
     const thread = await Q.getThread(parseInt(req.params.id), req.params.board);
-    if (!board||!thread) return res.status(404).send('Не найдено');
+    
+    if (!board || !thread) return res.status(404).send('Не найдено');
     if (thread.is_locked) return res.status(403).send('<h1>Тема закрыта</h1><a href="/">Назад</a>');
-    let {message} = req.body;
-    message = stripEmoji(esc(message||''));
-    if (!message&&!req.file) return res.status(400).send('<h1>Напишите сообщение или приложите файл</h1><a href="/'+board.slug+'/thread/'+thread.id+'">Назад</a>');
+    
+    let { message } = req.body;
+    message = stripEmoji(esc(message || ''));
+    
+    if (!message && !req.file) {
+      return res.status(400).send('<h1>Напишите сообщение или приложите файл</h1><a href="/' + board.slug + '/thread/' + thread.id + '">Назад</a>');
+    }
+    
     const u = req.session.user;
     const img = req.file ? req.file.filename : '';
-    const pid = await Q.createPost(thread.id, board.slug, u.username, u.id, message||'', img);
+    const pid = await Q.createPost(thread.id, board.slug, u.username, u.id, message || '', img);
     await Q.incrementPostCount(u.id);
-    if (!(message||'').toLowerCase().includes('sage')) await Q.bumpThread(thread.id);
-    if (thread.author_id && thread.author_id!==u.id) {
-      const ta = await Q.getUserById(thread.author_id);
-      if (ta&&ta.email_verified&&ta.notify_replies)
-        sendReplyNotification(ta.email, board.slug, thread.id, thread.subject, u.username);
+    
+    if (!(message || '').toLowerCase().includes('sage')) {
+      await Q.bumpThread(thread.id);
     }
-    res.redirect('/'+board.slug+'/thread/'+thread.id+'#p'+pid);
-  } catch(e) { console.error(e); res.status(500).send('Ошибка'); }
+    
+    // Уведомление автору
+    if (thread.author_id && thread.author_id !== u.id) {
+      const ta = await Q.getUserById(thread.author_id);
+      if (ta && ta.email_verified && ta.notify_replies) {
+        sendReplyNotification(ta.email, board.slug, thread.id, thread.subject, u.username);
+      }
+    }
+    
+    res.redirect('/' + board.slug + '/thread/' + thread.id + '#p' + pid);
+  } catch(e) { 
+    console.error(e); 
+    res.status(500).send('Ошибка'); 
+  }
 });
 
 // 404
-app.use((req,res) => {
-  res.status(404).send('<div style="font-family:monospace;text-align:center;padding:50px;"><h1>404</h1><p>Страница не найдена</p><a href="/">На главную</a></div>');
+app.use((req, res) => {
+  res.status(404).send(`
+    <div style="font-family:monospace;text-align:center;padding:50px;">
+      <h1>404</h1>
+      <p>Страница не найдена</p>
+      <a href="/">На главную</a>
+    </div>
+  `);
 });
 
+// Запуск
 async function start() {
   await initDB();
   Q = buildQueries();
-  app.listen(PORT, () => console.log('[QWA] Форум запущен на http://localhost:'+PORT));
+  app.listen(PORT, () => console.log('[QWA] Форум запущен на http://localhost:' + PORT));
 }
 start();
