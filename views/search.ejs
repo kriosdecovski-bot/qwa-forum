@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Поиск -- QWA</title>
+  <link rel="stylesheet" href="/style.css">
+</head><body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/">Главная</a>
+    <% boards.forEach(b => { %>
+      <a href="/<%= b.slug %>/">/<%= b.slug %>/</a>
+    <% }); %>
+  </div>
+  <div class="topbar-right">
+    <% if(currentUser){ %><a href="/profile"><%= currentUser.username %></a><a href="/logout">Выйти</a>
+    <% } else { %><a href="/login">Войти</a><% } %>
+  </div>
+</div>
+
+<div class="breadcrumbs"><a href="/">QWA</a><span>></span><strong>Поиск</strong></div>
+
+<div class="container">
+  <form action="/search" method="GET" class="search-bar" style="margin-bottom:15px;">
+    <input type="text" name="q" placeholder="Поиск по темам..." value="<%= query %>" maxlength="100">
+    <button type="submit">Найти</button>
+  </form>
+
+  <div class="section-box">
+    <div class="section-header">Результаты поиска<% if(query){ %> "<%= query %>"<% } %></div>
+    <% if(!results.length){ %>
+      <div class="empty-state"><%= query ? 'Ничего не найдено' : 'Введите запрос' %></div>
+    <% } else { %>
+      <table class="thread-table">
+        <thead><tr><th>Тема</th><th class="col-author">Раздел</th><th class="col-replies">Ответы</th></tr></thead>
+        <tbody>
+        <% results.forEach(t => { %>
+          <tr>
+            <td>
+              <div class="thread-subject"><a href="/<%= t.board_slug %>/thread/<%= t.id %>"><%= t.subject || 'Без темы #'+t.id %></a></div>
+              <div class="thread-preview"><%= t.message.substring(0,120) %></div>
+            </td>
+            <td class="col-author"><a href="/<%= t.board_slug %>/"><%= t.board_name %></a></td>
+            <td class="col-replies"><%= t.reply_count %></td>
+          </tr>
+        <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>
+
+<div class="footer">QWA Forum &copy; 2025</div>
+</body></html>

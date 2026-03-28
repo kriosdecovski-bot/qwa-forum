@@ -1,119 +1,101 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="ru"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= thread.subject || 'Thread #'+thread.id %> -- QWA</title>
+  <title><%= thread.subject || 'Тема #'+thread.id %> -- QWA</title>
   <link rel="stylesheet" href="/style.css">
 </head><body>
 
 <div class="topbar">
   <div class="topbar-left">
-    <a href="/">Glavnaya</a>
-    <% boards.forEach(function(b){%>
-      <a href="/<%= b.slug %>/"<%if(b.slug===board.slug){%> class="active"<%}%>>/<%= b.slug %>/</a>
-    <%});%>
+    <a href="/">Главная</a>
+    <% boards.forEach(b => { %>
+      <a href="/<%= b.slug %>/"<% if(b.slug===board.slug){%> class="active"<%}%>>/<%= b.slug %>/</a>
+    <% }); %>
   </div>
   <div class="topbar-right">
-    <% if(currentUser){%>
-      <a href="/profile" style="color:#aaa;border:none;"><%= currentUser.username %></a>
-      <%if(currentUser.role==='admin'){%><a href="/admin" style="color:#fff;border:none;margin-left:5px;">[A]</a><%}%>
-      <a href="/logout" style="color:#888;border:none;margin-left:8px;">vyyti</a>
-    <%} else {%>
-      <a href="/login" style="color:#aaa;border:none;">voyti</a>
-    <%}%>
+    <% if(currentUser){ %><a href="/profile"><%= currentUser.username %></a>
+      <%if(currentUser.role==='admin'){%><a href="/admin">[A]</a><%}%>
+      <a href="/logout">Выйти</a>
+    <% } else { %><a href="/login">Войти</a><% } %>
   </div>
 </div>
 
 <div class="breadcrumbs">
   <a href="/">QWA</a><span>></span>
   <a href="/<%= board.slug %>/">/<%= board.slug %>/</a><span>></span>
-  <strong><%= thread.subject || 'Thread #'+thread.id %></strong>
+  <strong><%= thread.subject || 'Тема #'+thread.id %></strong>
 </div>
 
 <div class="container">
-
-  <!-- ADMIN CONTROLS -->
   <% if(currentUser && currentUser.role==='admin'){ %>
   <div class="admin-controls">
     <form method="POST" action="/admin/pin-thread" style="display:inline;">
       <input type="hidden" name="thread_id" value="<%= thread.id %>">
       <input type="hidden" name="board_slug" value="<%= board.slug %>">
-      <input type="hidden" name="pin" value="<%= thread.is_pinned ? 0 : 1 %>">
-      <button type="submit" class="admin-btn"><%= thread.is_pinned ? 'Otkr. ot PIN' : 'Zakrepit (PIN)' %></button>
+      <input type="hidden" name="pin" value="<%= thread.is_pinned?0:1 %>">
+      <button type="submit" class="admin-btn"><%= thread.is_pinned?'Открепить':'Закрепить' %></button>
     </form>
     <form method="POST" action="/admin/lock-thread" style="display:inline;">
       <input type="hidden" name="thread_id" value="<%= thread.id %>">
       <input type="hidden" name="board_slug" value="<%= board.slug %>">
-      <input type="hidden" name="lock" value="<%= thread.is_locked ? 0 : 1 %>">
-      <button type="submit" class="admin-btn"><%= thread.is_locked ? 'Otkryt' : 'Zakryt (LOCK)' %></button>
+      <input type="hidden" name="lock" value="<%= thread.is_locked?0:1 %>">
+      <button type="submit" class="admin-btn"><%= thread.is_locked?'Открыть':'Закрыть' %></button>
     </form>
-    <form method="POST" action="/admin/delete-thread" style="display:inline;" onsubmit="return confirm('Udalit temu?')">
+    <form method="POST" action="/admin/delete-thread" style="display:inline;" onsubmit="return confirm('Удалить тему?')">
       <input type="hidden" name="thread_id" value="<%= thread.id %>">
       <input type="hidden" name="board_slug" value="<%= board.slug %>">
-      <button type="submit" class="admin-btn admin-btn-danger">Udalit temu</button>
+      <button type="submit" class="admin-btn admin-btn-danger">Удалить тему</button>
     </form>
   </div>
   <% } %>
 
-  <!-- REPLY FORM -->
   <% if(currentUser && !thread.is_locked){ %>
   <div class="form-section">
-    <div class="section-header">Otvetit</div>
+    <div class="section-header">Ответить</div>
     <div class="form-body visible">
       <form action="/<%= board.slug %>/thread/<%= thread.id %>/reply" method="POST" enctype="multipart/form-data">
-        <div class="form-row">
-          <div class="form-label">Soobshenie</div>
-          <div class="form-input">
-            <textarea name="message" placeholder="Vash otvet..." maxlength="10000"></textarea>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-label">Fayl</div>
-          <div class="form-input">
-            <input type="file" name="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.pdf,.zip,.rar,.7z,.txt">
-            <div class="form-hint">Max 5MB. Mozhno otpravit tolko fayl bez teksta.</div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-label"></div>
-          <div class="form-input"><button type="submit" class="form-submit">Otvetit</button></div>
-        </div>
+        <div class="form-row"><div class="form-label">Сообщение</div>
+          <div class="form-input"><textarea name="message" placeholder="Ваш ответ..." maxlength="10000"></textarea></div></div>
+        <div class="form-row"><div class="form-label">Файл</div>
+          <div class="form-input"><input type="file" name="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.pdf,.zip,.rar,.txt">
+            <div class="form-hint">Можно отправить только файл без текста</div></div></div>
+        <div class="form-row"><div class="form-label"></div>
+          <div class="form-input"><button type="submit" class="form-submit">Ответить</button></div></div>
       </form>
     </div>
   </div>
   <% } else if(thread.is_locked){ %>
-    <div class="section-box"><div style="padding:12px;text-align:center;color:#888;">Tema zakryta.</div></div>
+    <div class="section-box"><div style="padding:12px;text-align:center;color:#888;">Тема закрыта. Ответы отключены.</div></div>
   <% } else { %>
-    <div class="section-box"><div style="padding:12px;text-align:center;"><a href="/login?redirect=/<%= board.slug %>/thread/<%= thread.id %>">Voydite</a> chtoby otvechat.</div></div>
+    <div class="section-box"><div style="padding:12px;text-align:center;"><a href="/login?redirect=/<%= board.slug %>/thread/<%= thread.id %>">Войдите</a> чтобы отвечать.</div></div>
   <% } %>
 
-  <!-- OP POST -->
   <div class="post op-post" id="p<%= thread.id %>">
     <div class="post-head">
       <div class="post-head-left">
         <% if(thread.subject){%><span class="post-subject"><%= thread.subject %></span><%}%>
-        <span class="post-author"><%= thread.author_name %></span>
-        <span class="post-date"><%= formatDate(thread.created_at) %></span>
-        <% if(thread.is_pinned){%><span class="pinned-tag">PIN</span><%}%>
-        <% if(thread.is_locked){%><span class="locked-tag">LOCK</span><%}%>
+        <span class="post-author"><a href="/user/<%= thread.author_name %>"><%= thread.author_name %></a></span>
+        <span class="post-date"><%= fdate(thread.created_at) %></span>
+        <% if(thread.is_pinned){%><span class="pinned-tag">ЗАКРЕП</span><%}%>
+        <% if(thread.is_locked){%><span class="locked-tag">ЗАКРЫТ</span><%}%>
       </div>
       <div class="post-num">No.<%= thread.id %></div>
     </div>
-    <div class="post-body"><%- formatPost(thread.message) %></div>
+    <div class="post-body"><%- fmt(thread.message) %></div>
   </div>
 
-  <!-- REPLIES -->
-  <% posts.forEach(function(p){ %>
+  <% posts.forEach(p => { %>
   <div class="post reply-post" id="p<%= p.id %>">
     <div class="post-head">
       <div class="post-head-left">
-        <span class="post-author"><%= p.author_name %></span>
-        <span class="post-date"><%= formatDate(p.created_at) %></span>
+        <span class="post-author"><a href="/user/<%= p.author_name %>"><%= p.author_name %></a></span>
+        <span class="post-date"><%= fdate(p.created_at) %></span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="post-num"><a href="#p<%= p.id %>">No.<%= p.id %></a></div>
         <% if(currentUser && currentUser.role==='admin'){ %>
-          <form method="POST" action="/admin/delete-post" style="display:inline;" onsubmit="return confirm('Udalit post?')">
+          <form method="POST" action="/admin/delete-post" style="display:inline;" onsubmit="return confirm('Удалить?')">
             <input type="hidden" name="post_id" value="<%= p.id %>">
             <input type="hidden" name="board_slug" value="<%= board.slug %>">
             <input type="hidden" name="thread_id" value="<%= thread.id %>">
@@ -122,37 +104,28 @@
         <% } %>
       </div>
     </div>
-
     <% if(p.image_path){ %>
       <div class="post-file">
-        <% if(isImageFile(p.image_path)){ %>
-          <a href="/uploads/<%= p.image_path %>" target="_blank">
-            <img src="/uploads/<%= p.image_path %>" class="post-image" alt="image">
-          </a>
+        <% if(isImg(p.image_path)){ %>
+          <a href="/uploads/<%= p.image_path %>" target="_blank"><img src="/uploads/<%= p.image_path %>" class="post-image"></a>
         <% } else { %>
-          <a href="/uploads/<%= p.image_path %>" class="file-link" target="_blank">[ Skachat fayl: <%= p.image_path %> ]</a>
+          <a href="/uploads/<%= p.image_path %>" class="file-link" target="_blank">Скачать файл: <%= p.image_path %></a>
         <% } %>
       </div>
     <% } %>
-
-    <% if(p.message && p.message !== '[File attached to OP]'){ %>
-      <div class="post-body"><%- formatPost(p.message) %></div>
-    <% } %>
+    <% if(p.message){ %><div class="post-body"><%- fmt(p.message) %></div><% } %>
   </div>
   <% }); %>
 
-  <% if(!posts.length){ %>
-    <div class="empty-state">Otvetov poka net.</div>
-  <% } %>
+  <% if(!posts.length){ %><div class="empty-state">Ответов пока нет. Будьте первым!</div><% } %>
 
-  <div class="reply-count-info">Otvetov: <%= posts.length %></div>
-
+  <div class="reply-count-info">Ответов: <%= posts.length %></div>
   <div class="page-nav">
-    <div><a href="/<%= board.slug %>/">< Nazad</a></div>
-    <div><a href="/">Glavnaya</a></div>
-    <div><a href="#" onclick="window.scrollTo(0,0);return false;">Naverh ^</a></div>
+    <div><a href="/<%= board.slug %>/">< Назад</a></div>
+    <div><a href="/">Главная</a></div>
+    <div><a href="#" onclick="window.scrollTo(0,0);return false;">Наверх ^</a></div>
   </div>
 </div>
 
-<div class="footer">QWA Forum &copy; 2025 | /<%= board.slug %>/ | #<%= thread.id %></div>
+<div class="footer">QWA Forum &copy; 2025</div>
 </body></html>

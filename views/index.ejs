@@ -1,81 +1,110 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="ru"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="QWA Forum -- анонимный текстовый форум для обсуждений">
   <title>QWA Forum</title>
   <link rel="stylesheet" href="/style.css">
 </head><body>
 
 <div class="topbar">
   <div class="topbar-left">
-    <a href="/" class="active">Glavnaya</a>
-    <% boards.forEach(function(b) { %>
+    <a href="/" class="active">Главная</a>
+    <% boards.forEach(b => { %>
       <a href="/<%= b.slug %>/">/<%= b.slug %>/</a>
     <% }); %>
   </div>
   <div class="topbar-right">
     <% if (currentUser) { %>
-      <a href="/profile" style="color:#aaa;border:none;"><%= currentUser.username %></a>
-      <% if(currentUser.role==='admin'){ %><a href="/admin" style="color:#fff;border:none;margin-left:5px;">[A]</a><% } %>
-      <a href="/logout" style="color:#888;border:none;margin-left:8px;">vyyti</a>
+      <a href="/profile"><%= currentUser.username %></a>
+      <% if(currentUser.role==='admin'){ %><a href="/admin">[A]</a><% } %>
+      <a href="/logout">Выйти</a>
     <% } else { %>
-      <a href="/login" style="color:#aaa;border:none;">voyti</a>
-      <a href="/register" style="color:#aaa;border:none;margin-left:8px;">registraciya</a>
+      <a href="/login">Войти</a>
+      <a href="/register">Регистрация</a>
     <% } %>
   </div>
 </div>
 
 <div class="header">
   <h1>QWA</h1>
-  <div class="tagline">forum dlya lyudey -- est. 2025</div>
+  <div class="tagline">Форум для людей</div>
 </div>
 
 <div class="container">
 
+  <!-- Поиск -->
+  <form action="/search" method="GET" class="search-bar">
+    <input type="text" name="q" placeholder="Поиск по темам..." maxlength="100">
+    <button type="submit">Найти</button>
+  </form>
+
   <div class="stats-bar">
-    <div class="stat-item">Tem: <span class="stat-num"><%= stats.total_threads %></span></div>
-    <div class="stat-item">Postov: <span class="stat-num"><%= stats.total_posts %></span></div>
-    <div class="stat-item">Polzovateley: <span class="stat-num"><%= stats.total_users %></span></div>
+    <div class="stat-item">Тем: <span class="stat-num"><%= stats.total_threads %></span></div>
+    <div class="stat-item">Постов: <span class="stat-num"><%= stats.total_posts %></span></div>
+    <div class="stat-item">Пользователей: <span class="stat-num"><%= stats.total_users %></span></div>
   </div>
 
-  <div class="section-box">
-    <div class="section-header">Razdely foruma</div>
-    <table class="forum-table">
-      <thead>
-        <tr>
-          <th class="col-board">Razdel</th>
-          <th class="col-stats">Temy</th>
-          <th class="col-stats">Posty</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% boards.forEach(function(b) { %>
-        <tr>
-          <td>
-            <div class="board-name">
-              <a href="/<%= b.slug %>/"><%= b.name %></a>
-              <span class="board-slug">/<%= b.slug %>/</span>
-              <% if(b.admin_only){ %><span class="locked-tag">ADMINS</span><% } %>
+  <div class="two-columns">
+    <div class="main-col">
+      <div class="section-box">
+        <div class="section-header">Разделы форума</div>
+        <table class="forum-table">
+          <thead><tr>
+            <th class="col-board">Раздел</th>
+            <th class="col-stats">Тем</th>
+            <th class="col-stats">Постов</th>
+          </tr></thead>
+          <tbody>
+            <% boards.forEach(b => { %>
+            <tr>
+              <td>
+                <div class="board-name">
+                  <a href="/<%= b.slug %>/"><%= b.name %></a>
+                  <span class="board-slug">/<%= b.slug %>/</span>
+                  <% if(b.admin_only){ %><span class="locked-tag">АДМИН</span><% } %>
+                </div>
+                <div class="board-desc"><%= b.description %></div>
+              </td>
+              <td class="col-stats"><%= b.tc %></td>
+              <td class="col-stats"><%= b.pc %></td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div class="section-box">
+        <div class="section-header">Последние сообщения</div>
+        <div class="recent-posts">
+          <% if(recent && recent.length) { recent.forEach(p => { %>
+            <div class="recent-item">
+              <div class="recent-author"><strong><%= p.author_name %></strong></div>
+              <div class="recent-text"><%= (p.message||'').substring(0,80) %><%= (p.message||'').length>80?'...':'' %></div>
+              <div class="recent-meta">
+                в <a href="/<%= p.board_slug %>/thread/<%= p.thread_id %>#p<%= p.id %>"><%= p.thread_subject || 'теме' %></a>
+                -- <%= fdate(p.created_at) %>
+              </div>
             </div>
-            <div class="board-desc"><%= b.description %></div>
-          </td>
-          <td class="col-stats"><%= b.threadCount %></td>
-          <td class="col-stats"><%= b.postCount %></td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  </div>
+          <% }); } else { %>
+            <div class="recent-item" style="color:#999;">Пока ничего нет</div>
+          <% } %>
+        </div>
+      </div>
 
-  <% if (!currentUser) { %>
-  <div class="section-box">
-    <div style="padding:15px;text-align:center;font-size:13px;">
-      <a href="/register" style="font-weight:bold;">Zaregistriruytes</a> chtoby sozdavat temy i otvechat.
+      <% if (!currentUser) { %>
+      <div class="section-box">
+        <div class="section-header">Присоединяйтесь</div>
+        <div style="padding:12px;font-size:13px;line-height:1.6;">
+          <a href="/register" style="font-weight:bold;">Зарегистрируйтесь</a> чтобы создавать темы и отвечать.
+        </div>
+      </div>
+      <% } %>
     </div>
   </div>
-  <% } %>
-
 </div>
 
-<div class="footer">QWA Forum &copy; 2025</div>
+<div class="footer">QWA Forum &copy; 2025 | Никакой регистрации не нужно... шучу, нужна.</div>
 </body></html>

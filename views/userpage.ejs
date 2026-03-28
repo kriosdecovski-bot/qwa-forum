@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= user.username %> -- QWA</title>
+  <link rel="stylesheet" href="/style.css">
+</head><body>
+
+<div class="topbar">
+  <div class="topbar-left"><a href="/">Главная</a>
+    <% boards.forEach(b => { %><a href="/<%= b.slug %>/">/<%= b.slug %>/</a><% }); %>
+  </div>
+  <div class="topbar-right">
+    <% if(currentUser){ %><a href="/profile"><%= currentUser.username %></a><a href="/logout">Выйти</a>
+    <% } else { %><a href="/login">Войти</a><% } %>
+  </div>
+</div>
+
+<div class="container" style="max-width:500px;margin-top:30px;">
+  <div class="section-box">
+    <div class="section-header">Профиль: <%= user.username %></div>
+    <div style="padding:15px;">
+      <table style="width:100%;font-size:13px;">
+        <tr><td style="padding:8px;color:#888;width:40%;">Имя:</td><td style="padding:8px;font-weight:bold;"><%= user.username %></td></tr>
+        <tr><td style="padding:8px;color:#888;">Роль:</td><td style="padding:8px;">
+          <% if(user.role==='admin'){ %><span class="pinned-tag">АДМИН</span>
+          <% } else if(user.role==='mod'){ %><span class="locked-tag">МОДЕРАТОР</span>
+          <% } else { %>Пользователь<% } %>
+        </td></tr>
+        <tr><td style="padding:8px;color:#888;">Сообщений:</td><td style="padding:8px;"><%= user.post_count || 0 %></td></tr>
+        <tr><td style="padding:8px;color:#888;">Регистрация:</td><td style="padding:8px;"><%= fdate(user.created_at) %></td></tr>
+        <% if(user.about){ %>
+        <tr><td style="padding:8px;color:#888;">О себе:</td><td style="padding:8px;"><%= user.about %></td></tr>
+        <% } %>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer">QWA Forum &copy; 2025</div>
+</body></html>

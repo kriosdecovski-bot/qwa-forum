@@ -1,42 +1,31 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="ru"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vhod -- QWA</title>
+  <title>Вход -- QWA</title>
   <link rel="stylesheet" href="/style.css">
 </head><body>
 
 <div class="topbar">
   <div class="topbar-left"><a href="/">QWA</a></div>
-  <div class="topbar-right"><a href="/register" style="color:#aaa;border:none;">Registraciya</a></div>
+  <div class="topbar-right"><a href="/register">Регистрация</a></div>
 </div>
 
 <div class="container" style="max-width:400px;margin-top:40px;">
   <div class="section-box">
-    <div class="section-header">Vhod</div>
+    <div class="section-header">Вход</div>
     <div style="padding:20px;">
-
-      <% if (error) { %>
-        <div class="error-box"><%= error %></div>
-      <% } %>
-
+      <% if (error) { %><div class="error-box"><%= error %></div><% } %>
       <form method="POST" action="/login">
         <input type="hidden" name="redirect" value="<%= redirect %>">
-        <div class="form-row-stack">
-          <label>Imya polzovatelya</label>
-          <input type="text" name="username" required>
-        </div>
-        <div class="form-row-stack">
-          <label>Parol</label>
-          <input type="password" name="password" required>
-        </div>
-        <button type="submit" class="form-submit" style="width:100%;margin-top:10px;">Voyti</button>
+        <div class="form-row-stack"><label>Имя пользователя</label>
+          <input type="text" name="username" required></div>
+        <div class="form-row-stack"><label>Пароль</label>
+          <input type="password" name="password" required></div>
+        <button type="submit" class="form-submit" style="width:100%;margin-top:10px;">Войти</button>
       </form>
-      <div style="text-align:center;margin-top:15px;font-size:12px;">
-        Net akkaunta? <a href="/register">Zaregistrirovatsya</a>
-      </div>
+      <div style="text-align:center;margin-top:15px;font-size:12px;">Нет аккаунта? <a href="/register">Зарегистрироваться</a></div>
     </div>
   </div>
 </div>
-
 </body></html>
