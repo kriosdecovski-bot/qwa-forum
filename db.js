@@ -73,17 +73,17 @@ async function initDB() {
 
   if (count === 0) {
     const boards = [
-      ['general',  'Obshiy',           'Razgovory
- na lyubye temy',                    0, 1],
-      ['roblox',   'Roblox',           'Obsuzhdeniye igr v Roblox',             0, 2],
-      ['games',    'Igry',             'PC, konsoli, mobilnye igry',            0, 3],
-      ['politics', 'Politika',         'Politika i obshchestvo',                0, 4],
-      ['tech',     'Tekhnologii',      'Programmirovanie, zhelezo, soft',       0, 5],
-      ['music',    'Muzyka',           'Muzyka vsekh zhanrov',                  0, 6],
-      ['anime',    'Anime',            'Anime, manga, ranobe',                  0, 7],
-      ['random',   'Random',           'Obo vsem i ni o chem',                  0, 8],
-      ['news',     'Novosti QWA',      'Oficialnye novosti foruma. Tolko adminy', 1, 0]
-    ];
+    const boards = [
+  ['general',  'Obshiy',           'Razgovory na lyubye temy',                    0, 1],
+  ['roblox',   'Roblox',           'Obsuzhdeniye igr v Roblox',                   0, 2],
+  ['games',    'Igry',             'PC, konsoli, mobilnye igry',                  0, 3],
+  ['politics', 'Politika',         'Politika i obshchestvo',                      0, 4],
+  ['tech',     'Tekhnologii',      'Programmirovanie, zhelezo, soft',             0, 5],
+  ['music',    'Muzyka',           'Muzyka vsekh zhanrov',                        0, 6],
+  ['anime',    'Anime',            'Anime, manga, ranobe',                        0, 7],
+  ['random',   'Random',           'Obo vsem i ni o chem',                        0, 8],
+  ['news',     'Novosti QWA',      'Oficialnye novosti foruma. Tolko adminy',    1, 0]
+];
     for (const b of boards) {
       db.run("INSERT INTO boards (slug,name,description,admin_only,sort_order) VALUES(?,?,?,?,?)", b);
     }
