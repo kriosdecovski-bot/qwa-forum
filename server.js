@@ -12,9 +12,8 @@ const { requireAuth, requireAdmin, addUserToViews } = require('./middleware');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-let Q; // queries
+let Q;
 
-// === UPLOADS ===
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
@@ -28,7 +27,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm', '.pdf', '.zip', '.rar', '.7z', '.txt'];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -40,21 +39,19 @@ const upload = multer({
   }
 });
 
-// === CONFIG ===
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(uploadDir));
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'qwa-forum-secret-key-change-me',
+  secret: process.env.SESSION_SECRET || 'qwa-forum-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 days
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
 }));
 app.use(addUserToViews);
 
-// === HELPERS ===
 function sanitize(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -77,7 +74,7 @@ function formatPost(text) {
 
 function formatDate(d) {
   if (!d) return '';
-  const dt = new Date(d + (d.includes('Z') ? '' : 'Z'));
+  const dt = new Date(d);
   const pad = n => n.toString().padStart(2, '0');
   return `${pad(dt.getUTCDate())}.${pad(dt.getUTCMonth()+1)}.${dt.getUTCFullYear()} ${pad(dt.getUTCHours())}:${pad(dt.getUTCMinutes())}`;
 }
@@ -102,26 +99,27 @@ app.use((req, res, next) => {
   res.locals.formatDate = formatDate;
   res.locals.isImageFile = isImageFile;
   res.locals.siteName = 'QWA';
-  res.locals.error = null;
-  res.locals.success = null;
   next();
 });
 
-// ==================== ROUTES ====================
+// === ROUTES ===
 
-// --- ГЛАВНАЯ ---
-app.get('/', (req, res) => {
-  const boards = Q.getAllBoards();
-  const stats = Q.getTotalStats();
-  const boardsWithStats = boards.map(b => ({
-    ...b,
-    threadCount: Q.getThreadCount(b.slug).cnt,
-    postCount: Q.getPostCount(b.slug).cnt
-  }));
-  res.render('index', { boards: boardsWithStats, stats });
+app.get('/', async (req, res) => {
+  try {
+    const boards = await Q.getAllBoards();
+    const stats = await Q.getTotalStats();
+    const boardsWithStats = await Promise.all(boards.map(async b => ({
+      ...b,
+      threadCount: (await Q.getThreadCount(b.slug)).cnt,
+      postCount: (await Q.getPostCount(b.slug)).cnt
+    })));
+    res.render('index', { boards: boardsWithStats, stats });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
-// --- РЕГИСТРАЦИЯ ---
 app.get('/register', (req, res) => {
   res.render('register', { error: null, step: 'form' });
 });
@@ -130,86 +128,86 @@ app.post('/register', async (req, res) => {
   const { username, email, password, password2 } = req.body;
 
   if (!username || !email || !password) {
-    return res.render('register', { error: 'Zapolnite vse polya', step: 'form' });
+    return res.render('register', { error: 'Заполните все поля', step: 'form' });
   }
   if (username.length < 3 || username.length > 20) {
-    return res.render('register', { error: 'Imya ot 3 do 20 simvolov', step: 'form' });
+    return res.render('register', { error: 'Имя от 3 до 20 символов', step: 'form' });
   }
   if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-    return res.render('register', { error: 'Imya: tolko bukvy, cifry, _', step: 'form' });
+    return res.render('register', { error: 'Имя: только буквы, цифры, _', step: 'form' });
   }
   if (password.length < 6) {
-    return res.render('register', { error: 'Parol minimum 6 simvolov', step: 'form' });
+    return res.render('register', { error: 'Пароль минимум 6 символов', step: 'form' });
   }
   if (password !== password2) {
-    return res.render('register', { error: 'Paroli ne sovpadayut', step: 'form' });
+    return res.render('register', { error: 'Пароли не совпадают', step: 'form' });
   }
   if (!isValidEmail(email)) {
-    return res.render('register', { error: 'Tolko gmail.com, mail.ru, yandex.ru', step: 'form' });
+    return res.render('register', { error: 'Только gmail.com, mail.ru, yandex.ru', step: 'form' });
   }
-  if (Q.getUserByUsername(username)) {
-    return res.render('register', { error: 'Eto imya uzhe zanyato', step: 'form' });
+
+  const existUser = await Q.getUserByUsername(username);
+  if (existUser) {
+    return res.render('register', { error: 'Это имя уже занято', step: 'form' });
   }
-  if (Q.getUserByEmail(email)) {
-    return res.render('register', { error: 'Eta pochta uzhe ispolzuetsya', step: 'form' });
+
+  const existEmail = await Q.getUserByEmail(email);
+  if (existEmail) {
+    return res.render('register', { error: 'Эта почта уже используется', step: 'form' });
   }
 
   const code = generateCode();
-  Q.saveVerifyCode(email, code);
+  await Q.saveVerifyCode(email, code);
 
   const sent = await sendVerificationCode(email, code);
   if (!sent) {
-    // Если почта не настроена, создаём без верификации
     const hash = bcrypt.hashSync(password, 10);
-    const userId = Q.createUser(username, email, hash);
-    Q.verifyUser(userId);
-    req.session.user = Q.getUserById(userId);
+    const userId = await Q.createUser(username, email, hash);
+    await Q.verifyUser(userId);
+    req.session.user = await Q.getUserById(userId);
     return res.redirect('/');
   }
 
-  // Сохраняем данные в сессии для подтверждения
   req.session.pendingUser = { username, email, password };
   res.render('register', { error: null, step: 'verify', email });
 });
 
-app.post('/verify', (req, res) => {
+app.post('/verify', async (req, res) => {
   const { code } = req.body;
   const pending = req.session.pendingUser;
 
   if (!pending) return res.redirect('/register');
 
-  const saved = Q.getVerifyCode(pending.email);
+  const saved = await Q.getVerifyCode(pending.email);
   if (!saved || saved.code !== code) {
-    return res.render('register', { error: 'Nevernyy kod', step: 'verify', email: pending.email });
+    return res.render('register', { error: 'Неверный код', step: 'verify', email: pending.email });
   }
 
-  // Проверяем срок (10 минут)
-  const codeTime = new Date(saved.created_at + 'Z').getTime();
+  const codeTime = new Date(saved.created_at).getTime();
   if (Date.now() - codeTime > 10 * 60 * 1000) {
-    return res.render('register', { error: 'Kod istek. Zaregistriruytes zanovo', step: 'form' });
+    return res.render('register', { error: 'Код истёк. Зарегистрируйтесь заново', step: 'form' });
   }
 
   const hash = bcrypt.hashSync(pending.password, 10);
-  const userId = Q.createUser(pending.username, pending.email, hash);
-  Q.verifyUser(userId);
-  Q.deleteVerifyCode(pending.email);
+  const userId = await Q.createUser(pending.username, pending.email, hash);
+  await Q.verifyUser(userId);
+  await Q.deleteVerifyCode(pending.email);
 
   delete req.session.pendingUser;
-  req.session.user = Q.getUserById(userId);
+  req.session.user = await Q.getUserById(userId);
   res.redirect('/');
 });
 
-// --- ВХОД ---
 app.get('/login', (req, res) => {
   res.render('login', { error: null, redirect: req.query.redirect || '/' });
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { username, password, redirect } = req.body;
-  const user = Q.getUserByUsername(username);
+  const user = await Q.getUserByUsername(username);
 
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.render('login', { error: 'Nevernyy login ili parol', redirect: redirect || '/' });
+    return res.render('login', { error: 'Неверный логин или пароль', redirect: redirect || '/' });
   }
 
   req.session.user = {
@@ -222,75 +220,70 @@ app.post('/login', (req, res) => {
   res.redirect(redirect || '/');
 });
 
-// --- ВЫХОД ---
 app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/');
 });
 
-// --- ПРОФИЛЬ ---
-app.get('/profile', requireAuth, (req, res) => {
-  const user = Q.getUserById(req.session.user.id);
+app.get('/profile', requireAuth, async (req, res) => {
+  const user = await Q.getUserById(req.session.user.id);
   res.render('profile', { user });
 });
 
-// --- АДМИНКА ---
-app.get('/admin', requireAdmin, (req, res) => {
-  const users = Q.getAllUsers();
-  const boards = Q.getAllBoards();
-  const stats = Q.getTotalStats();
+app.get('/admin', requireAdmin, async (req, res) => {
+  const users = await Q.getAllUsers();
+  const boards = await Q.getAllBoards();
+  const stats = await Q.getTotalStats();
   res.render('admin', { users, boards, stats });
 });
 
-app.post('/admin/set-role', requireAdmin, (req, res) => {
+app.post('/admin/set-role', requireAdmin, async (req, res) => {
   const { user_id, role } = req.body;
   if (['user', 'mod', 'admin'].includes(role)) {
-    Q.setUserRole(parseInt(user_id), role);
+    await Q.setUserRole(parseInt(user_id), role);
   }
   res.redirect('/admin');
 });
 
-app.post('/admin/delete-thread', requireAdmin, (req, res) => {
+app.post('/admin/delete-thread', requireAdmin, async (req, res) => {
   const { thread_id, board_slug } = req.body;
-  Q.deleteThread(parseInt(thread_id));
+  await Q.deleteThread(parseInt(thread_id));
   res.redirect('/' + board_slug + '/');
 });
 
-app.post('/admin/pin-thread', requireAdmin, (req, res) => {
+app.post('/admin/pin-thread', requireAdmin, async (req, res) => {
   const { thread_id, board_slug, pin } = req.body;
-  Q.pinThread(parseInt(thread_id), parseInt(pin));
+  await Q.pinThread(parseInt(thread_id), parseInt(pin));
   res.redirect('/' + board_slug + '/thread/' + thread_id);
 });
 
-app.post('/admin/lock-thread', requireAdmin, (req, res) => {
+app.post('/admin/lock-thread', requireAdmin, async (req, res) => {
   const { thread_id, board_slug, lock } = req.body;
-  Q.lockThread(parseInt(thread_id), parseInt(lock));
+  await Q.lockThread(parseInt(thread_id), parseInt(lock));
   res.redirect('/' + board_slug + '/thread/' + thread_id);
 });
 
-app.post('/admin/delete-post', requireAdmin, (req, res) => {
+app.post('/admin/delete-post', requireAdmin, async (req, res) => {
   const { post_id, board_slug, thread_id } = req.body;
-  Q.deletePost(parseInt(post_id));
+  await Q.deletePost(parseInt(post_id));
   res.redirect('/' + board_slug + '/thread/' + thread_id);
 });
 
-// --- ДОСКА ---
-app.get('/:board/', (req, res) => {
-  const board = Q.getBoard(req.params.board);
-  if (!board) return res.status(404).send('<h1>404</h1><a href="/">Nazad</a>');
+app.get('/:board/', async (req, res) => {
+  const board = await Q.getBoard(req.params.board);
+  if (!board) return res.status(404).send('<h1>404</h1><a href="/">Назад</a>');
 
-  const threads = Q.getThreadsByBoard(board.slug);
-  const boards = Q.getAllBoards();
+  const threads = await Q.getThreadsByBoard(board.slug);
+  const boards = await Q.getAllBoards();
   res.render('board', { board, boards, threads });
 });
 
-// --- СОЗДАНИЕ ТРЕДА ---
-app.post('/:board/post', requireAuth, upload.single('file'), (req, res) => {
-  const board = Q.getBoard(req.params.board);
+app.post('/:board/post', requireAuth, upload.single('file'), async (req, res) => {
+  const board = await Q.getBoard(req.params.board);
   if (!board) return res.status(404).send('Board not found');
 
   if (board.admin_only && req.session.user.role !== 'admin') {
-    return res.status(403).send('<h1>Tolko dlya adminov</h1><a href="/">Nazad</a>');
+    return res.status(403).send('<h1>Только для админов</h1><a href="/">Назад</a>');
   }
 
   let { subject, message } = req.body;
@@ -298,59 +291,54 @@ app.post('/:board/post', requireAuth, upload.single('file'), (req, res) => {
   subject = stripEmoji(sanitize(subject || ''));
 
   if (!message || message.length < 1) {
-    return res.status(400).send('<h1>Soobshenie ne mozhet byt pustym</h1><a href="/' + board.slug + '/">Nazad</a>');
+    return res.status(400).send('<h1>Сообщение не может быть пустым</h1><a href="/' + board.slug + '/">Назад</a>');
   }
 
   const user = req.session.user;
-  const threadId = Q.createThread(board.slug, subject, user.username, user.id, message);
+  const threadId = await Q.createThread(board.slug, subject, user.username, user.id, message);
 
-  // Если приложен файл, добавляем как первый пост с картинкой
   if (req.file) {
-    Q.createPost(threadId, board.slug, user.username, user.id, '[File attached to OP]', req.file.filename);
+    await Q.createPost(threadId, board.slug, user.username, user.id, '[File attached to OP]', req.file.filename);
   }
 
   res.redirect('/' + board.slug + '/thread/' + threadId);
 });
 
-// --- ТРЕД ---
-app.get('/:board/thread/:id', (req, res) => {
-  const board = Q.getBoard(req.params.board);
-  if (!board) return res.status(404).send('<h1>404</h1><a href="/">Nazad</a>');
+app.get('/:board/thread/:id', async (req, res) => {
+  const board = await Q.getBoard(req.params.board);
+  if (!board) return res.status(404).send('<h1>404</h1><a href="/">Назад</a>');
 
-  const thread = Q.getThread(parseInt(req.params.id), board.slug);
-  if (!thread) return res.status(404).send('<h1>404</h1><a href="/' + board.slug + '/">Nazad</a>');
+  const thread = await Q.getThread(parseInt(req.params.id), board.slug);
+  if (!thread) return res.status(404).send('<h1>404</h1><a href="/' + board.slug + '/">Назад</a>');
 
-  const posts = Q.getPostsByThread(thread.id);
-  const boards = Q.getAllBoards();
+  const posts = await Q.getPostsByThread(thread.id);
+  const boards = await Q.getAllBoards();
   res.render('thread', { board, boards, thread, posts });
 });
 
-// --- ОТВЕТ В ТРЕД ---
 app.post('/:board/thread/:id/reply', requireAuth, upload.single('file'), async (req, res) => {
-  const board = Q.getBoard(req.params.board);
-  const thread = Q.getThread(parseInt(req.params.id), req.params.board);
+  const board = await Q.getBoard(req.params.board);
+  const thread = await Q.getThread(parseInt(req.params.id), req.params.board);
 
   if (!board || !thread) return res.status(404).send('Not found');
-  if (thread.is_locked) return res.status(403).send('<h1>Tema zakryta</h1><a href="/' + board.slug + '/">Nazad</a>');
+  if (thread.is_locked) return res.status(403).send('<h1>Тема закрыта</h1><a href="/' + board.slug + '/">Назад</a>');
 
   let { message } = req.body;
   message = stripEmoji(sanitize(message || ''));
 
   if (!message && !req.file) {
-    return res.status(400).send('<h1>Napishite soobshenie ili prilozhite fayl</h1><a href="/' + board.slug + '/thread/' + thread.id + '">Nazad</a>');
+    return res.status(400).send('<h1>Напишите сообщение или приложите файл</h1><a href="/' + board.slug + '/thread/' + thread.id + '">Назад</a>');
   }
 
   const user = req.session.user;
   const imagePath = req.file ? req.file.filename : '';
-  const postId = Q.createPost(thread.id, board.slug, user.username, user.id, message || '', imagePath);
+  const postId = await Q.createPost(thread.id, board.slug, user.username, user.id, message || '', imagePath);
 
-  // Bump
   const isSage = (message || '').toLowerCase().includes('sage');
-  if (!isSage) Q.bumpThread(thread.id);
+  if (!isSage) await Q.bumpThread(thread.id);
 
-  // Уведомление автору треда
   if (thread.author_id && thread.author_id !== user.id) {
-    const threadAuthor = Q.getUserById(thread.author_id);
+    const threadAuthor = await Q.getUserById(thread.author_id);
     if (threadAuthor && threadAuthor.email_verified && threadAuthor.notify_replies) {
       sendReplyNotification(threadAuthor.email, board.slug, thread.id, thread.subject, user.username);
     }
@@ -359,16 +347,14 @@ app.post('/:board/thread/:id/reply', requireAuth, upload.single('file'), async (
   res.redirect('/' + board.slug + '/thread/' + thread.id + '#p' + postId);
 });
 
-// --- 404 ---
 app.use((req, res) => {
   res.status(404).send(`
     <div style="font-family:monospace;text-align:center;padding:50px;">
-      <h1>404</h1><p>Stranica ne naydena</p><a href="/">Na glavnuyu</a>
+      <h1>404</h1><p>Страница не найдена</p><a href="/">На главную</a>
     </div>
   `);
 });
 
-// === START ===
 async function start() {
   await initDB();
   Q = buildQueries();
