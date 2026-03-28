@@ -1,0 +1,391 @@
+/* ==========================================
+   QWA FORUM -- OLDSCHOOL STYLE
+   No emojis. No nonsense. Pure text.
+   ========================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #FFFFEE;
+  color: #800000;
+  font-family: arial, helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+a {
+  color: #0000EE;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #DD0000;
+  text-decoration: underline;
+}
+
+/* === HEADER / NAVIGATION === */
+
+.nav-bar {
+  background-color: #800000;
+  color: #FFFFEE;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-bottom: 1px solid #600000;
+}
+
+.nav-bar a {
+  color: #FFCC99;
+  margin: 0 4px;
+}
+
+.nav-bar a:hover {
+  color: #FFFFFF;
+}
+
+.site-header {
+  text-align: center;
+  padding: 20px 0 10px 0;
+  border-bottom: 2px solid #800000;
+  margin-bottom: 10px;
+}
+
+.site-header h1 {
+  font-size: 28px;
+  font-family: "Courier New", Courier, monospace;
+  font-weight: bold;
+  color: #800000;
+  letter-spacing: 4px;
+}
+
+.site-header h1 span.q {
+  color: #DD0000;
+}
+
+.site-header .subtitle {
+  font-size: 11px;
+  color: #AA5555;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+.board-title {
+  text-align: center;
+  padding: 15px 0 5px 0;
+}
+
+.board-title h1 {
+  font-size: 24px;
+  color: #800000;
+  font-family: "Courier New", monospace;
+}
+
+.board-title .board-desc {
+  font-size: 11px;
+  color: #AA5555;
+}
+
+/* === MAIN PAGE -- BOARD LIST === */
+
+.main-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+.board-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+  background-color: #F0E0D6;
+  border: 1px solid #D9BFB7;
+}
+
+.board-list-table th {
+  background-color: #800000;
+  color: #FFFFEE;
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.board-list-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #D9BFB7;
+  font-size: 12px;
+}
+
+.board-list-table tr:nth-child(even) {
+  background-color: #F5EBE0;
+}
+
+.board-list-table tr:hover {
+  background-color: #EEDDCC;
+}
+
+.board-link {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.stats-box {
+  background-color: #F0E0D6;
+  border: 1px solid #D9BFB7;
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-size: 11px;
+  text-align: center;
+  color: #AA5555;
+}
+
+/* === POST FORM === */
+
+.postform-container {
+  text-align: center;
+  margin: 10px 0 20px 0;
+}
+
+.toggle-form-btn {
+  background-color: #800000;
+  color: #FFFFEE;
+  border: none;
+  padding: 5px 15px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: arial, helvetica, sans-serif;
+}
+
+.toggle-form-btn:hover {
+  background-color: #AA0000;
+}
+
+.postform {
+  display: inline-block;
+  margin: 10px auto;
+  background-color: #F0E0D6;
+  border: 1px solid #D9BFB7;
+  padding: 0;
+}
+
+.postform table {
+  border-collapse: collapse;
+}
+
+.postform td {
+  padding: 2px 4px;
+}
+
+.postform .field-label {
+  background-color: #EA8;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 3px 8px;
+  text-align: left;
+  color: #800000;
+}
+
+.postform input[type="text"],
+.postform textarea {
+  border: 1px solid #AAA;
+  padding: 3px;
+  font-family: arial, helvetica, sans-serif;
+  font-size: 12px;
+  width: 350px;
+  background-color: #FFFFFF;
+  color: #000000;
+}
+
+.postform textarea {
+  width: 350px;
+  height: 120px;
+  resize: vertical;
+}
+
+.postform input[type="submit"] {
+  background-color: #F0E0D6;
+  border: 1px solid #AAA;
+  padding: 3px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #800000;
+  font-weight: bold;
+}
+
+.postform input[type="submit"]:hover {
+  background-color: #EEDDCC;
+}
+
+/* === THREAD LISTING ON BOARD PAGE === */
+
+.separator {
+  border: 0;
+  border-top: 1px solid #D9BFB7;
+  margin: 0;
+}
+
+.thread-container {
+  margin: 0 0 5px 0;
+  padding: 10px;
+}
+
+.op-post {
+  background-color: #F0E0D6;
+  border: 1px solid #D9BFB7;
+  padding: 8px;
+  margin: 5px 0;
+  overflow: hidden;
+}
+
+.post-header {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.post-subject {
+  color: #0F0C5D;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.post-author {
+  color: #117743;
+  font-weight: bold;
+}
+
+.post-tripcode {
+  color: #117743;
+  font-weight: normal;
+}
+
+.post-date {
+  color: #AA5555;
+}
+
+.post-number {
+  color: #AA5555;
+}
+
+.post-number a {
+  color: #AA5555;
+}
+
+.post-message {
+  margin: 5px 0 5px 0;
+  font-size: 13px;
+  color: #000000;
+  word-wrap: break-word;
+}
+
+.greentext {
+  color: #789922;
+}
+
+.quotelink {
+  color: #DD0000;
+  text-decoration: underline;
+}
+
+.omitted-info {
+  color: #707070;
+  font-size: 11px;
+  font-style: italic;
+  margin: 3px 0 3px 20px;
+}
+
+.thread-links {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* === REPLY POSTS === */
+
+.reply-post {
+  background-color: #D6DAF0;
+  border: 1px solid #B7C5D9;
+  padding: 6px 8px;
+  margin: 4px 0 4px 25px;
+  display: inline-block;
+  min-width: 500px;
+  max-width: 800px;
+}
+
+.reply-post .post-message {
+  margin: 4px 0;
+}
+
+/* === THREAD VIEW === */
+
+.thread-view {
+  padding: 10px;
+}
+
+.thread-op {
+  background-color: #F0E0D6;
+  border: 1px solid #D9BFB7;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.reply-list {
+  margin: 5px 0;
+}
+
+/* === FOOTER === */
+
+.footer {
+  text-align: center;
+  padding: 15px;
+  margin-top: 20px;
+  border-top: 2px solid #800000;
+  font-size: 11px;
+  color: #AA5555;
+}
+
+.footer a {
+  color: #800000;
+}
+
+/* === MISC === */
+
+.back-link {
+  font-size: 12px;
+  margin: 5px 0;
+  display: block;
+}
+
+.page-bottom-nav {
+  text-align: center;
+  padding: 10px;
+  font-size: 12px;
+}
+
+.error-text {
+  color: #DD0000;
+  font-weight: bold;
+}
+
+.rules-text {
+  font-size: 10px;
+  color: #AA5555;
+  text-align: center;
+  margin: 5px 0;
+}
+
+/* === RESPONSIVE (minimal) === */
+
+@media (max-width: 600px) {
+  .postform input[type="text"],
+  .postform textarea {
+    width: 250px;
+  }
+
+  .reply-post {
+    min-width: 90%;
+    max-width: 95%;
+    margin-left: 10px;
+  }
+}

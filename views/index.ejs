@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QWA -- Anonymous Forum</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav-bar">
+  [ <a href="/">Home</a> ]
+  <% boards.forEach(function(b) { %>
+    / <a href="/<%= b.slug %>/"><%= b.slug %></a>
+  <% }); %>
+  /
+</div>
+
+<div class="site-header">
+  <h1><span class="q">Q</span>WA</h1>
+  <div class="subtitle">Anonymous text forum -- no emojis, no avatars, no bullshit</div>
+</div>
+
+<div class="main-container">
+
+  <div class="stats-box">
+    Total threads: <%= stats.total_threads %> | Total posts: <%= stats.total_posts %>
+  </div>
+
+  <table class="board-list-table">
+    <tr>
+      <th>Board</th>
+      <th>Description</th>
+      <th>Threads</th>
+      <th>Posts</th>
+    </tr>
+    <% boards.forEach(function(b) { %>
+    <tr>
+      <td>
+        <a href="/<%= b.slug %>/" class="board-link">/<%= b.slug %>/</a>
+        -- <%= b.name %>
+      </td>
+      <td><%= b.description %></td>
+      <td><%= b.threadCount %></td>
+      <td><%= b.postCount %></td>
+    </tr>
+    <% }); %>
+  </table>
+
+  <div class="rules-text">
+    QWA Forum. Anonymity by default. Use name#secret for tripcode.<br>
+    Keep it civil or don't -- we don't care.
+  </div>
+
+</div>
+
+<div class="footer">
+  QWA &copy; 2025 | Powered by nothing fancy
+</div>
+
+</body>
+</html>

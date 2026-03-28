@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>/<%= board.slug %>/ -- <%= thread.subject || 'Thread #' + thread.id %> -- QWA</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav-bar">
+  [ <a href="/">Home</a> ]
+  <% boards.forEach(function(b) { %>
+    / <a href="/<%= b.slug %>/"<% if(b.slug===board.slug){ %> style="color:#FFF;font-weight:bold"<% } %>><%= b.slug %></a>
+  <% }); %>
+  /
+</div>
+
+<div class="board-title">
+  <h1>/<%= board.slug %>/ -- <%= board.name %></h1>
+  <a href="/<%= board.slug %>/" class="back-link" style="text-align:center;display:block;">[Return to board]</a>
+</div>
+
+<!-- REPLY FORM -->
+<div class="postform-container">
+  <form action="/<%= board.slug %>/thread/<%= thread.id %>/reply" method="POST" class="postform">
+    <table>
+      <tr>
+        <td class="field-label">Name</td>
+        <td><input type="text" name="name" placeholder="Anonymous" maxlength="50"></td>
+      </tr>
+      <tr>
+        <td class="field-label">Message</td>
+        <td>
+          <textarea name="message" placeholder="Reply to thread..." maxlength="5000" required></textarea>
+        </td>
+      </tr>
+      <tr>
+        <td class="field-label"></td>
+        <td><input type="submit" value="Post Reply"></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<hr class="separator">
+
+<!-- OP POST -->
+<div class="thread-view">
+
+  <div class="thread-op" id="p<%= thread.id %>">
+    <div class="post-header">
+      <% if (thread.subject) { %><span class="post-subject"><%= thread.subject %></span> <% } %>
+      <span class="post-author"><%= thread.author %></span>
+      <span class="post-date"><%= formatDate(thread.created_at) %></span>
+      <span class="post-number">No.<%= thread.id %></span>
+      <% if (thread.is_locked) { %><span class="error-text">[LOCKED]</span><% } %>
+      <% if (thread.is_pinned) { %><span style="color:#800000;font-weight:bold;">[PINNED]</span><% } %>
+    </div>
+    <div class="post-message"><%- formatPost(thread.message) %></div>
+  </div>
+
+  <!-- REPLIES -->
+  <div class="reply-list">
+    <% posts.forEach(function(p) { %>
+      <div class="reply-post" id="p<%= p.id %>">
+        <div class="post-header">
+          <span class="post-author"><%= p.author %></span>
+          <span class="post-date"><%= formatDate(p.created_at) %></span>
+          <span class="post-number">
+            <a href="#p<%= p.id %>">No.<%= p.id %></a>
+          </span>
+        </div>
+        <div class="post-message"><%- formatPost(p.message) %></div>
+      </div>
+    <% }); %>
+  </div>
+
+  <% if (posts.length === 0) { %>
+    <div style="text-align:center;padding:20px;color:#AA5555;">
+      No replies yet.
+    </div>
+  <% } %>
+
+</div>
+
+<hr class="separator">
+
+<div class="page-bottom-nav">
+  [<a href="/<%= board.slug %>/">Return</a>]
+  [<a href="/">Home</a>]
+  [<a href="#" onclick="window.scrollTo(0,0);return false;">Top</a>]
+  <br>
+  <span style="color:#AA5555;font-size:11px;">
+    <%= posts.length %> repl<%= posts.length === 1 ? 'y' : 'ies' %> in this thread
+  </span>
+</div>
+
+<div class="footer">
+  QWA &copy; 2025 | /<%= board.slug %>/ | Thread #<%= thread.id %>
+</div>
+
+</body>
+</html>

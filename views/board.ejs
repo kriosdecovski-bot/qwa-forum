@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>/<%= board.slug %>/ -- <%= board.name %> -- QWA</title>
+  <link rel="stylesheet" href="/style.css">
+  <script>
+    function toggleForm() {
+      var f = document.getElementById('postform-wrap');
+      f.style.display = (f.style.display === 'none') ? 'block' : 'none';
+    }
+  </script>
+</head>
+<body>
+
+<div class="nav-bar">
+  [ <a href="/">Home</a> ]
+  <% boards.forEach(function(b) { %>
+    / <a href="/<%= b.slug %>/"<% if(b.slug===board.slug){ %> style="color:#FFF;font-weight:bold"<% } %>><%= b.slug %></a>
+  <% }); %>
+  /
+</div>
+
+<div class="board-title">
+  <h1>/<%= board.slug %>/ -- <%= board.name %></h1>
+  <div class="board-desc"><%= board.description %></div>
+</div>
+
+<!-- POST FORM -->
+<div class="postform-container">
+  <button class="toggle-form-btn" onclick="toggleForm()">[Start a New Thread]</button>
+
+  <div id="postform-wrap" style="display:none; margin-top:10px;">
+    <form action="/<%= board.slug %>/post" method="POST" class="postform">
+      <table>
+        <tr>
+          <td class="field-label">Name</td>
+          <td><input type="text" name="name" placeholder="Anonymous" maxlength="50"></td>
+        </tr>
+        <tr>
+          <td class="field-label">Subject</td>
+          <td>
+            <input type="text" name="subject" placeholder="Subject" maxlength="100">
+            <input type="submit" value="Post">
+          </td>
+        </tr>
+        <tr>
+          <td class="field-label">Message</td>
+          <td><textarea name="message" placeholder="Type your message here..." maxlength="5000" required></textarea></td>
+        </tr>
+      </table>
+    </form>
+    <div class="rules-text">
+      Supported: &gt;greentext, &gt;&gt;123 (post links). Name#secret for tripcode. "sage" in name = no bump.
+    </div>
+  </div>
+</div>
+
+<hr class="separator">
+
+<!-- THREAD LISTING -->
+<% if (threads.length === 0) { %>
+  <div style="text-align:center; padding:40px; color:#AA5555;">
+    No threads yet. Be the first to post.
+  </div>
+<% } %>
+
+<% threads.forEach(function(t) { %>
+  <div class="thread-container">
+
+    <div class="op-post">
+      <div class="post-header">
+        <% if (t.subject) { %><span class="post-subject"><%= t.subject %></span> <% } %>
+        <span class="post-author"><%= t.author %></span>
+        <span class="post-date"><%= formatDate(t.created_at) %></span>
+        <span class="post-number">
+          <a href="/<%= board.slug %>/thread/<%= t.id %>" id="p<%= t.id %>">No.<%= t.id %></a>
+        </span>
+        <span class="thread-links">
+          [<a href="/<%= board.slug %>/thread/<%= t.id %>">Reply</a>]
+        </span>
+      </div>
+      <div class="post-message"><%- formatPost(t.message) %></div>
+    </div>
+
+    <% if (t.omitted > 0) { %>
+      <div class="omitted-info"><%= t.omitted %> post(s) omitted. Click Reply to view.</div>
+    <% } %>
+
+    <% t.lastPosts.forEach(function(p) { %>
+      <div class="reply-post">
+        <div class="post-header">
+          <span class="post-author"><%= p.author %></span>
+          <span class="post-date"><%= formatDate(p.created_at) %></span>
+          <span class="post-number">
+            <a href="/<%= board.slug %>/thread/<%= t.id %>#p<%= p.id %>" id="p<%= p.id %>">No.<%= p.id %></a>
+          </span>
+        </div>
+        <div class="post-message"><%- formatPost(p.message) %></div>
+      </div>
+    <% }); %>
+
+  </div>
+  <hr class="separator">
+<% }); %>
+
+<div class="page-bottom-nav">
+  [<a href="/">Home</a>] [<a href="#" onclick="window.scrollTo(0,0);return false;">Top</a>]
+</div>
+
+<div class="footer">
+  QWA &copy; 2025 | /<%= board.slug %>/
+</div>
+
+</body>
+</html>
