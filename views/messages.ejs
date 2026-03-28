@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Сообщения -- QWA</title>
+  <link rel="stylesheet" href="/style.css">
+</head><body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/">Главная</a>
+    <% boards.forEach(b => { %><a href="/<%= b.slug %>/">/<%= b.slug %>/</a><% }); %>
+  </div>
+  <div class="topbar-right">
+    <a href="/profile"><%= currentUser.username %></a>
+    <a href="/messages" class="active">ЛС</a>
+    <a href="/logout">Выйти</a>
+  </div>
+</div>
+
+<div class="breadcrumbs"><a href="/">QWA</a><span>></span><strong>Личные сообщения</strong></div>
+
+<div class="container" style="max-width:700px;">
+
+  <!-- Написать новое -->
+  <div class="section-box" style="margin-bottom:15px;">
+    <div class="section-header">Написать сообщение</div>
+    <div style="padding:15px;">
+      <form action="" method="GET" id="newMsgForm">
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="recipient" placeholder="Имя пользователя" style="flex:1;padding:6px 10px;border:1px solid #ccc;font-size:13px;">
+          <button type="button" onclick="goToChat()" class="form-submit">Написать</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Входящие -->
+  <div class="section-box">
+    <div class="section-header">Входящие</div>
+    <% if(!inbox.length) { %>
+      <div class="empty-state">Нет сообщений</div>
+    <% } else { %>
+      <% const chats = {}; inbox.forEach(m => { if(!chats[m.from_name]) chats[m.from_name] = m; }); %>
+      <% Object.values(chats).forEach(m => { %>
+        <div style="padding:10px 15px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong><a href="/messages/chat/<%= m.from_name %>"><%= m.from_name %></a></strong>
+            <div style="color:#888;font-size:12px;margin-top:2px;"><%= m.message.substring(0,60) %><%= m.message.length>60?'...':'' %></div>
+          </div>
+          <div style="font-size:11px;color:#aaa;"><%= formatDate(m.created_at) %>
+            <% if(!m.is_read) { %><span style="color:#cc0000;font-weight:bold;"> NEW</span><% } %>
+          </div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+</div>
+
+<script>
+function goToChat() {
+  var name = document.getElementById('recipient').value.trim();
+  if(name) window.location.href = '/messages/chat/' + name;
+}
+</script>
+
+<div class="footer">QWA Forum</div>
+</body></html>

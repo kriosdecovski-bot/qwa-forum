@@ -815,3 +815,20 @@ input[type="file"] {
   .two-columns { flex-direction: column; }
   .side-col { min-width: auto; }
 }
+/* === ROLES === */
+.role-owner { background:#cc0000; color:#fff; padding:1px 6px; font-size:10px; font-weight:bold; letter-spacing:1px; }
+.role-coowner { background:#cc6600; color:#fff; padding:1px 6px; font-size:10px; font-weight:bold; }
+.role-admin { background:#222; color:#fff; padding:1px 6px; font-size:10px; font-weight:bold; }
+.role-mod { background:#666; color:#fff; padding:1px 6px; font-size:10px; font-weight:bold; }
+
+/* === MENTIONS === */
+.mention { color:#0066cc; font-weight:bold; border:none; }
+.mention:hover { color:#0044aa; text-decoration:underline; }
+
+/* === AVATARS === */
+.user-avatar { width:32px; height:32px; border-radius:50%; border:1px solid #ddd; object-fit:cover; vertical-align:middle; margin-right:6px; }
+.user-avatar-big { width:80px; height:80px; border-radius:50%; border:2px solid #ddd; object-fit:cover; }
+.avatar-default { width:32px; height:32px; border-radius:50%; background:#ddd; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; color:#888; vertical-align:middle; margin-right:6px; }
+
+/* === MESSAGES === */
+.msg-badge { background:#cc0000; color:#fff; font-size:10px; padding:1px 5px; font-weight:bold; margin-left:3px; }
