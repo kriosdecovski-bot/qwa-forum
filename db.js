@@ -3,12 +3,23 @@ const bcrypt = require('bcryptjs');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 10000
 });
 
 async function initDB() {
   const client = await pool.connect();
   try {
+    // Таблица сессий (обязательно первой!)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS session (
+        sid VARCHAR NOT NULL PRIMARY KEY,
+        sess JSON NOT NULL,
+        expire TIMESTAMP(6) NOT NULL
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire)`);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -76,16 +87,16 @@ async function initDB() {
     const boardCheck = await client.query("SELECT COUNT(*)::int as cnt FROM boards");
     if (boardCheck.rows[0].cnt === 0) {
       const boards = [
-        ['news',     'Новости QWA',  'Официальные новости форума',       1, 0],
-        ['general',  'Общий',        'Разговоры на любые темы',           0, 1],
-        ['roblox',   'Roblox',       'Всё о Roblox: игры, скрипты, обсуждения', 0, 2],
-        ['games',    'Игры',         'ПК, консоли, мобильные игры',      0, 3],
-        ['politics', 'Политика',     'Политика и общество',              0, 4],
-        ['tech',     'Технологии',   'Программирование, железо, софт',   0, 5],
-        ['music',    'Музыка',       'Музыка всех жанров',               0, 6],
-        ['anime',    'Аниме',        'Аниме, манга, ранобэ',             0, 7],
-        ['creative', 'Творчество',   'Арт, видео, рассказы, проекты',    0, 8],
-        ['random',   'Random',       'Обо всём и ни о чём',              0, 9]
+        ['news',     'Новости QWA',  'Официальные новости форума',              1, 0],
+        ['general',  'Общий',        'Разговоры на любые темы',                  0, 1],
+        ['roblox',   'Roblox',       'Всё о Roblox: игры, скрипты, обсуждения',  0, 2],
+        ['games',    'Игры',         'ПК, консоли, мобильные игры',              0, 3],
+        ['politics', 'Политика',     'Политика и общество',                      0, 4],
+        ['tech',     'Технологии',   'Программирование, железо, софт',           0, 5],
+        ['music',    'Музыка',       'Музыка всех жанров',                       0, 6],
+        ['anime',    'Аниме',        'Аниме, манга, ранобэ',                     0, 7],
+        ['creative', 'Творчество',   'Арт, видео, рассказы, проекты',            0, 8],
+        ['random',   'Random',       'Обо всём и ни о чём',                      0, 9]
       ];
       for (const b of boards) {
         await client.query(
@@ -113,7 +124,6 @@ async function initDB() {
 
 function buildQueries() {
   return {
-    // === Пользователи ===
     createUser: async (username, email, hash) => {
       const r = await pool.query(
         "INSERT INTO users (username,email,password_hash) VALUES($1,$2,$3) RETURNING id",
@@ -152,7 +162,6 @@ function buildQueries() {
       return r.rows;
     },
 
-    // === Коды верификации ===
     saveVerifyCode: async (email, code) => {
       await pool.query("DELETE FROM verify_codes WHERE email=$1", [email]);
       await pool.query("INSERT INTO verify_codes (email,code) VALUES($1,$2)", [email, code]);
@@ -167,7 +176,6 @@ function buildQueries() {
       await pool.query("DELETE FROM verify_codes WHERE email=$1", [email]);
     },
 
-    // === Борды ===
     getAllBoards: async () => {
       const r = await pool.query("SELECT * FROM boards ORDER BY sort_order, id");
       return r.rows;
@@ -177,7 +185,6 @@ function buildQueries() {
       return r.rows[0] || null;
     },
 
-    // === Треды ===
     getThreadsByBoard: async (slug) => {
       const r = await pool.query(`
         SELECT t.*, (SELECT COUNT(*)::int FROM posts WHERE thread_id=t.id) as reply_count
@@ -210,7 +217,6 @@ function buildQueries() {
       await pool.query("UPDATE threads SET is_locked=$1 WHERE id=$2", [lock, id]);
     },
 
-    // === Посты ===
     getPostsByThread: async (tid) => {
       const r = await pool.query(
         "SELECT * FROM posts WHERE thread_id=$1 ORDER BY created_at", [tid]
@@ -231,7 +237,6 @@ function buildQueries() {
       await pool.query("UPDATE threads SET bumped_at=NOW() WHERE id=$1", [id]);
     },
 
-    // === Поиск ===
     searchThreads: async (query) => {
       const r = await pool.query(`
         SELECT t.*, b.name as board_name,
@@ -244,7 +249,6 @@ function buildQueries() {
       return r.rows;
     },
 
-    // === Статистика ===
     getThreadCount: async (slug) => {
       const r = await pool.query("SELECT COUNT(*)::int as cnt FROM threads WHERE board_slug=$1", [slug]);
       return { cnt: r.rows[0].cnt };
@@ -264,7 +268,6 @@ function buildQueries() {
       };
     },
 
-    // === Последние посты (для главной) ===
     getRecentPosts: async (limit) => {
       const r = await pool.query(`
         SELECT p.*, t.subject as thread_subject, b.name as board_name
