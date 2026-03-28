@@ -1,74 +1,101 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
+<html><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= thread.subject || 'Thread #' + thread.id %> -- /<%= board.slug %>/ -- QWA</title>
+  <title><%= thread.subject || 'Thread #'+thread.id %> -- QWA</title>
   <link rel="stylesheet" href="/style.css">
-</head>
-<body>
+</head><body>
 
 <div class="topbar">
   <div class="topbar-left">
     <a href="/">Glavnaya</a>
-    <% boards.forEach(function(b) { %>
-      <a href="/<%= b.slug %>/"<% if(b.slug===board.slug){ %> class="active"<% } %>>/<%= b.slug %>/</a>
-    <% }); %>
+    <% boards.forEach(function(b){%>
+      <a href="/<%= b.slug %>/"<%if(b.slug===board.slug){%> class="active"<%}%>>/<%= b.slug %>/</a>
+    <%});%>
   </div>
-  <div class="topbar-right">QWA Forum</div>
+  <div class="topbar-right">
+    <% if(currentUser){%>
+      <a href="/profile" style="color:#aaa;border:none;"><%= currentUser.username %></a>
+      <%if(currentUser.role==='admin'){%><a href="/admin" style="color:#fff;border:none;margin-left:5px;">[A]</a><%}%>
+      <a href="/logout" style="color:#888;border:none;margin-left:8px;">vyyti</a>
+    <%} else {%>
+      <a href="/login" style="color:#aaa;border:none;">voyti</a>
+    <%}%>
+  </div>
 </div>
 
 <div class="breadcrumbs">
-  <a href="/">QWA</a>
-  <span>></span>
-  <a href="/<%= board.slug %>/">/<%= board.slug %>/ -- <%= board.name %></a>
-  <span>></span>
-  <strong><%= thread.subject || 'Thread #' + thread.id %></strong>
+  <a href="/">QWA</a><span>></span>
+  <a href="/<%= board.slug %>/">/<%= board.slug %>/</a><span>></span>
+  <strong><%= thread.subject || 'Thread #'+thread.id %></strong>
 </div>
 
 <div class="container">
 
+  <!-- ADMIN CONTROLS -->
+  <% if(currentUser && currentUser.role==='admin'){ %>
+  <div class="admin-controls">
+    <form method="POST" action="/admin/pin-thread" style="display:inline;">
+      <input type="hidden" name="thread_id" value="<%= thread.id %>">
+      <input type="hidden" name="board_slug" value="<%= board.slug %>">
+      <input type="hidden" name="pin" value="<%= thread.is_pinned ? 0 : 1 %>">
+      <button type="submit" class="admin-btn"><%= thread.is_pinned ? 'Otkr. ot PIN' : 'Zakrepit (PIN)' %></button>
+    </form>
+    <form method="POST" action="/admin/lock-thread" style="display:inline;">
+      <input type="hidden" name="thread_id" value="<%= thread.id %>">
+      <input type="hidden" name="board_slug" value="<%= board.slug %>">
+      <input type="hidden" name="lock" value="<%= thread.is_locked ? 0 : 1 %>">
+      <button type="submit" class="admin-btn"><%= thread.is_locked ? 'Otkryt' : 'Zakryt (LOCK)' %></button>
+    </form>
+    <form method="POST" action="/admin/delete-thread" style="display:inline;" onsubmit="return confirm('Udalit temu?')">
+      <input type="hidden" name="thread_id" value="<%= thread.id %>">
+      <input type="hidden" name="board_slug" value="<%= board.slug %>">
+      <button type="submit" class="admin-btn admin-btn-danger">Udalit temu</button>
+    </form>
+  </div>
+  <% } %>
+
   <!-- REPLY FORM -->
+  <% if(currentUser && !thread.is_locked){ %>
   <div class="form-section">
-    <div class="section-header">Otvetit v temu</div>
+    <div class="section-header">Otvetit</div>
     <div class="form-body visible">
-      <% if (thread.is_locked) { %>
-        <div style="padding:15px;color:#888;text-align:center;">Tema zakryta. Otvety otklyucheny.</div>
-      <% } else { %>
-      <form action="/<%= board.slug %>/thread/<%= thread.id %>/reply" method="POST">
-        <div class="form-row">
-          <div class="form-label">Imya</div>
-          <div class="form-input">
-            <input type="text" name="name" placeholder="Anonymous" maxlength="50">
-          </div>
-        </div>
+      <form action="/<%= board.slug %>/thread/<%= thread.id %>/reply" method="POST" enctype="multipart/form-data">
         <div class="form-row">
           <div class="form-label">Soobshenie</div>
           <div class="form-input">
-            <textarea name="message" placeholder="Vash otvet..." maxlength="5000" required></textarea>
-            <div class="form-hint">&gt;greentext &gt;&gt;123 ssylka na post. "sage" v imeni = ne podnimat temu.</div>
+            <textarea name="message" placeholder="Vash otvet..." maxlength="10000"></textarea>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Fayl</div>
+          <div class="form-input">
+            <input type="file" name="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.pdf,.zip,.rar,.7z,.txt">
+            <div class="form-hint">Max 5MB. Mozhno otpravit tolko fayl bez teksta.</div>
           </div>
         </div>
         <div class="form-row">
           <div class="form-label"></div>
-          <div class="form-input">
-            <button type="submit" class="form-submit">Otpravit otvet</button>
-          </div>
+          <div class="form-input"><button type="submit" class="form-submit">Otvetit</button></div>
         </div>
       </form>
-      <% } %>
     </div>
   </div>
+  <% } else if(thread.is_locked){ %>
+    <div class="section-box"><div style="padding:12px;text-align:center;color:#888;">Tema zakryta.</div></div>
+  <% } else { %>
+    <div class="section-box"><div style="padding:12px;text-align:center;"><a href="/login?redirect=/<%= board.slug %>/thread/<%= thread.id %>">Voydite</a> chtoby otvechat.</div></div>
+  <% } %>
 
   <!-- OP POST -->
   <div class="post op-post" id="p<%= thread.id %>">
     <div class="post-head">
       <div class="post-head-left">
-        <% if (thread.subject) { %><span class="post-subject"><%= thread.subject %></span><% } %>
-        <span class="post-author"><%= thread.author %></span>
+        <% if(thread.subject){%><span class="post-subject"><%= thread.subject %></span><%}%>
+        <span class="post-author"><%= thread.author_name %></span>
         <span class="post-date"><%= formatDate(thread.created_at) %></span>
-        <% if (thread.is_pinned) { %><span class="pinned-tag">PIN</span><% } %>
-        <% if (thread.is_locked) { %><span class="locked-tag">LOCK</span><% } %>
+        <% if(thread.is_pinned){%><span class="pinned-tag">PIN</span><%}%>
+        <% if(thread.is_locked){%><span class="locked-tag">LOCK</span><%}%>
       </div>
       <div class="post-num">No.<%= thread.id %></div>
     </div>
@@ -76,40 +103,56 @@
   </div>
 
   <!-- REPLIES -->
-  <% if (posts.length > 0) { %>
-    <% posts.forEach(function(p) { %>
-    <div class="post reply-post" id="p<%= p.id %>">
-      <div class="post-head">
-        <div class="post-head-left">
-          <span class="post-author"><%= p.author %></span>
-          <span class="post-date"><%= formatDate(p.created_at) %></span>
-        </div>
-        <div class="post-num"><a href="#p<%= p.id %>">No.<%= p.id %></a></div>
+  <% posts.forEach(function(p){ %>
+  <div class="post reply-post" id="p<%= p.id %>">
+    <div class="post-head">
+      <div class="post-head-left">
+        <span class="post-author"><%= p.author_name %></span>
+        <span class="post-date"><%= formatDate(p.created_at) %></span>
       </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="post-num"><a href="#p<%= p.id %>">No.<%= p.id %></a></div>
+        <% if(currentUser && currentUser.role==='admin'){ %>
+          <form method="POST" action="/admin/delete-post" style="display:inline;" onsubmit="return confirm('Udalit post?')">
+            <input type="hidden" name="post_id" value="<%= p.id %>">
+            <input type="hidden" name="board_slug" value="<%= board.slug %>">
+            <input type="hidden" name="thread_id" value="<%= thread.id %>">
+            <button type="submit" class="admin-btn-sm">X</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+
+    <% if(p.image_path){ %>
+      <div class="post-file">
+        <% if(isImageFile(p.image_path)){ %>
+          <a href="/uploads/<%= p.image_path %>" target="_blank">
+            <img src="/uploads/<%= p.image_path %>" class="post-image" alt="image">
+          </a>
+        <% } else { %>
+          <a href="/uploads/<%= p.image_path %>" class="file-link" target="_blank">[ Skachat fayl: <%= p.image_path %> ]</a>
+        <% } %>
+      </div>
+    <% } %>
+
+    <% if(p.message && p.message !== '[File attached to OP]'){ %>
       <div class="post-body"><%- formatPost(p.message) %></div>
-    </div>
-    <% }); %>
-  <% } else { %>
-    <div class="empty-state">
-      Otvetov poka net. Budte pervym!
-    </div>
+    <% } %>
+  </div>
+  <% }); %>
+
+  <% if(!posts.length){ %>
+    <div class="empty-state">Otvetov poka net.</div>
   <% } %>
 
-  <div class="reply-count-info">
-    Vsego otvetov: <%= posts.length %>
-  </div>
+  <div class="reply-count-info">Otvetov: <%= posts.length %></div>
 
   <div class="page-nav">
-    <div><a href="/<%= board.slug %>/">< Nazad k razdelu</a></div>
+    <div><a href="/<%= board.slug %>/">< Nazad</a></div>
     <div><a href="/">Glavnaya</a></div>
     <div><a href="#" onclick="window.scrollTo(0,0);return false;">Naverh ^</a></div>
   </div>
-
 </div>
 
-<div class="footer">
-  QWA Forum &copy; 2025 | /<%= board.slug %>/ | Thread #<%= thread.id %>
-</div>
-
-</body>
-</html>
+<div class="footer">QWA Forum &copy; 2025 | /<%= board.slug %>/ | #<%= thread.id %></div>
+</body></html>

@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
+<html><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QWA Forum</title>
   <link rel="stylesheet" href="/style.css">
-</head>
-<body>
+</head><body>
 
 <div class="topbar">
   <div class="topbar-left">
@@ -15,26 +13,29 @@
       <a href="/<%= b.slug %>/">/<%= b.slug %>/</a>
     <% }); %>
   </div>
-  <div class="topbar-right">QWA Forum</div>
+  <div class="topbar-right">
+    <% if (currentUser) { %>
+      <a href="/profile" style="color:#aaa;border:none;"><%= currentUser.username %></a>
+      <% if(currentUser.role==='admin'){ %><a href="/admin" style="color:#fff;border:none;margin-left:5px;">[A]</a><% } %>
+      <a href="/logout" style="color:#888;border:none;margin-left:8px;">vyyti</a>
+    <% } else { %>
+      <a href="/login" style="color:#aaa;border:none;">voyti</a>
+      <a href="/register" style="color:#aaa;border:none;margin-left:8px;">registraciya</a>
+    <% } %>
+  </div>
 </div>
 
 <div class="header">
   <h1>QWA</h1>
-  <div class="tagline">anonymous text forum -- est. 2025</div>
+  <div class="tagline">forum dlya lyudey -- est. 2025</div>
 </div>
 
 <div class="container">
 
   <div class="stats-bar">
-    <div class="stat-item">
-      Vsego tem: <span class="stat-num"><%= stats.total_threads %></span>
-    </div>
-    <div class="stat-item">
-      Vsego postov: <span class="stat-num"><%= stats.total_posts %></span>
-    </div>
-    <div class="stat-item">
-      Razdelov: <span class="stat-num"><%= boards.length %></span>
-    </div>
+    <div class="stat-item">Tem: <span class="stat-num"><%= stats.total_threads %></span></div>
+    <div class="stat-item">Postov: <span class="stat-num"><%= stats.total_posts %></span></div>
+    <div class="stat-item">Polzovateley: <span class="stat-num"><%= stats.total_users %></span></div>
   </div>
 
   <div class="section-box">
@@ -50,10 +51,11 @@
       <tbody>
         <% boards.forEach(function(b) { %>
         <tr>
-          <td class="col-board">
+          <td>
             <div class="board-name">
               <a href="/<%= b.slug %>/"><%= b.name %></a>
               <span class="board-slug">/<%= b.slug %>/</span>
+              <% if(b.admin_only){ %><span class="locked-tag">ADMINS</span><% } %>
             </div>
             <div class="board-desc"><%= b.description %></div>
           </td>
@@ -65,22 +67,15 @@
     </table>
   </div>
 
+  <% if (!currentUser) { %>
   <div class="section-box">
-    <div class="section-header-light">O forume</div>
-    <div style="padding:12px 15px; font-size:12px; color:#666; line-height:1.8;">
-      QWA -- anonimnyy tekstovyy forum. Registraciya ne nuzhna.<br>
-      Pishi kak Anonymous ili ispolzuy tripcode: Imya#sekret.<br>
-      Greentext: nachinayte stroku s &gt; dlya citatirovaniya.<br>
-      Ssylki na posty: &gt;&gt;123<br>
-      Sage: vvedite "sage" v pole imeni chtoby ne podnimat temu.
+    <div style="padding:15px;text-align:center;font-size:13px;">
+      <a href="/register" style="font-weight:bold;">Zaregistriruytes</a> chtoby sozdavat temy i otvechat.
     </div>
   </div>
+  <% } %>
 
 </div>
 
-<div class="footer">
-  QWA Forum &copy; 2025 | No registration. No emojis. No bullshit.
-</div>
-
-</body>
-</html>
+<div class="footer">QWA Forum &copy; 2025</div>
+</body></html>

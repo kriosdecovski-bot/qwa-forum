@@ -1,281 +1,377 @@
 const express = require('express');
 const path = require('path');
-const { db, queries } = require('./db');
+const session = require('express-session');
+const multer = require('multer');
+const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const { initDB, buildQueries } = require('./db');
+const { sendVerificationCode, sendReplyNotification } = require('./mail');
+const { requireAuth, requireAdmin, addUserToViews } = require('./middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// === НАСТРОЙКА ===
+let Q; // queries
 
+// === UPLOADS ===
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, uuidv4() + ext);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm', '.pdf', '.zip', '.rar', '.7z', '.txt'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not allowed'));
+    }
+  }
+});
+
+// === CONFIG ===
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(uploadDir));
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'qwa-forum-secret-key-change-me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 days
+}));
+app.use(addUserToViews);
 
-// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
-
-// Простая фильтрация XSS
+// === HELPERS ===
 function sanitize(str) {
   if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Убираем эмодзи из текста
 function stripEmoji(str) {
   if (!str) return '';
-  return str.replace(
-    /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu,
-    ''
-  ).trim();
+  return str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '').trim();
 }
 
-// Форматирование текста поста (greentext, ссылки на посты)
 function formatPost(text) {
   if (!text) return '';
-
   let lines = text.split('\n');
-  let result = [];
-
-  for (let line of lines) {
-    // greentext
-    if (line.startsWith('&gt;') && !line.startsWith('&gt;&gt;')) {
-      result.push('<span class="greentext">' + line + '</span>');
-    }
-    // ссылки на посты >>123
-    else {
-      line = line.replace(
-        /&gt;&gt;(\d+)/g,
-        '<a href="#p$1" class="quotelink">&gt;&gt;$1</a>'
-      );
-      result.push(line);
-    }
-  }
-
-  return result.join('<br>');
+  return lines.map(line => {
+    if (line.startsWith('&gt;') && !line.startsWith('&gt;&gt;'))
+      return '<span class="greentext">' + line + '</span>';
+    return line.replace(/&gt;&gt;(\d+)/g, '<a href="#p$1" class="quotelink">&gt;&gt;$1</a>');
+  }).join('<br>');
 }
 
-// Генерация tripcode (простой хэш)
-function generateTrip(name) {
-  if (!name) return { displayName: 'Anonymous', tripcode: '' };
-
-  const parts = name.split('#');
-  if (parts.length < 2) {
-    return { displayName: sanitize(parts[0]) || 'Anonymous', tripcode: '' };
-  }
-
-  const displayName = sanitize(parts[0]) || 'Anonymous';
-  const secret = parts[1];
-
-  // Простой хэш для tripcode
-  let hash = 0;
-  for (let i = 0; i < secret.length; i++) {
-    const char = secret.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  const tripcode = '!' + Math.abs(hash).toString(36).toUpperCase().slice(0, 8);
-
-  return { displayName, tripcode };
+function formatDate(d) {
+  if (!d) return '';
+  const dt = new Date(d + (d.includes('Z') ? '' : 'Z'));
+  const pad = n => n.toString().padStart(2, '0');
+  return `${pad(dt.getUTCDate())}.${pad(dt.getUTCMonth()+1)}.${dt.getUTCFullYear()} ${pad(dt.getUTCHours())}:${pad(dt.getUTCMinutes())}`;
 }
 
-// Форматирование даты
-function formatDate(dateStr) {
-  const d = new Date(dateStr + 'Z');
-  const pad = (n) => n.toString().padStart(2, '0');
-
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
-
-  return `${pad(d.getUTCDate())}/${months[d.getUTCMonth()]}/${d.getUTCFullYear()}` +
-    `(${days[d.getUTCDay()]})` +
-    `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+function isValidEmail(email) {
+  const allowed = ['gmail.com', 'mail.ru', 'yandex.ru', 'yandex.com', 'ya.ru', 'inbox.ru', 'list.ru', 'bk.ru'];
+  const domain = email.split('@')[1];
+  return allowed.includes(domain);
 }
 
-// Передаём хелперы в шаблоны
+function generateCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function isImageFile(filename) {
+  if (!filename) return false;
+  return ['.jpg','.jpeg','.png','.gif','.webp'].includes(path.extname(filename).toLowerCase());
+}
+
 app.use((req, res, next) => {
   res.locals.formatPost = formatPost;
   res.locals.formatDate = formatDate;
+  res.locals.isImageFile = isImageFile;
   res.locals.siteName = 'QWA';
+  res.locals.error = null;
+  res.locals.success = null;
   next();
 });
 
-// === МАРШРУТЫ ===
+// ==================== ROUTES ====================
 
-// Главная -- список досок
+// --- ГЛАВНАЯ ---
 app.get('/', (req, res) => {
-  const boards = queries.getAllBoards.all();
-  const stats = queries.getTotalStats.get();
-
-  // Подсчёт постов для каждой борды
+  const boards = Q.getAllBoards();
+  const stats = Q.getTotalStats();
   const boardsWithStats = boards.map(b => ({
     ...b,
-    threadCount: queries.getThreadCount.get(b.slug).cnt,
-    postCount: queries.getPostCount.get(b.slug).cnt
+    threadCount: Q.getThreadCount(b.slug).cnt,
+    postCount: Q.getPostCount(b.slug).cnt
   }));
-
-  res.render('index', {
-    boards: boardsWithStats,
-    stats
-  });
+  res.render('index', { boards: boardsWithStats, stats });
 });
 
-// Доска -- список тредов
+// --- РЕГИСТРАЦИЯ ---
+app.get('/register', (req, res) => {
+  res.render('register', { error: null, step: 'form' });
+});
+
+app.post('/register', async (req, res) => {
+  const { username, email, password, password2 } = req.body;
+
+  if (!username || !email || !password) {
+    return res.render('register', { error: 'Zapolnite vse polya', step: 'form' });
+  }
+  if (username.length < 3 || username.length > 20) {
+    return res.render('register', { error: 'Imya ot 3 do 20 simvolov', step: 'form' });
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    return res.render('register', { error: 'Imya: tolko bukvy, cifry, _', step: 'form' });
+  }
+  if (password.length < 6) {
+    return res.render('register', { error: 'Parol minimum 6 simvolov', step: 'form' });
+  }
+  if (password !== password2) {
+    return res.render('register', { error: 'Paroli ne sovpadayut', step: 'form' });
+  }
+  if (!isValidEmail(email)) {
+    return res.render('register', { error: 'Tolko gmail.com, mail.ru, yandex.ru', step: 'form' });
+  }
+  if (Q.getUserByUsername(username)) {
+    return res.render('register', { error: 'Eto imya uzhe zanyato', step: 'form' });
+  }
+  if (Q.getUserByEmail(email)) {
+    return res.render('register', { error: 'Eta pochta uzhe ispolzuetsya', step: 'form' });
+  }
+
+  const code = generateCode();
+  Q.saveVerifyCode(email, code);
+
+  const sent = await sendVerificationCode(email, code);
+  if (!sent) {
+    // Если почта не настроена, создаём без верификации
+    const hash = bcrypt.hashSync(password, 10);
+    const userId = Q.createUser(username, email, hash);
+    Q.verifyUser(userId);
+    req.session.user = Q.getUserById(userId);
+    return res.redirect('/');
+  }
+
+  // Сохраняем данные в сессии для подтверждения
+  req.session.pendingUser = { username, email, password };
+  res.render('register', { error: null, step: 'verify', email });
+});
+
+app.post('/verify', (req, res) => {
+  const { code } = req.body;
+  const pending = req.session.pendingUser;
+
+  if (!pending) return res.redirect('/register');
+
+  const saved = Q.getVerifyCode(pending.email);
+  if (!saved || saved.code !== code) {
+    return res.render('register', { error: 'Nevernyy kod', step: 'verify', email: pending.email });
+  }
+
+  // Проверяем срок (10 минут)
+  const codeTime = new Date(saved.created_at + 'Z').getTime();
+  if (Date.now() - codeTime > 10 * 60 * 1000) {
+    return res.render('register', { error: 'Kod istek. Zaregistriruytes zanovo', step: 'form' });
+  }
+
+  const hash = bcrypt.hashSync(pending.password, 10);
+  const userId = Q.createUser(pending.username, pending.email, hash);
+  Q.verifyUser(userId);
+  Q.deleteVerifyCode(pending.email);
+
+  delete req.session.pendingUser;
+  req.session.user = Q.getUserById(userId);
+  res.redirect('/');
+});
+
+// --- ВХОД ---
+app.get('/login', (req, res) => {
+  res.render('login', { error: null, redirect: req.query.redirect || '/' });
+});
+
+app.post('/login', (req, res) => {
+  const { username, password, redirect } = req.body;
+  const user = Q.getUserByUsername(username);
+
+  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    return res.render('login', { error: 'Nevernyy login ili parol', redirect: redirect || '/' });
+  }
+
+  req.session.user = {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    email_verified: user.email_verified
+  };
+  res.redirect(redirect || '/');
+});
+
+// --- ВЫХОД ---
+app.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.redirect('/');
+});
+
+// --- ПРОФИЛЬ ---
+app.get('/profile', requireAuth, (req, res) => {
+  const user = Q.getUserById(req.session.user.id);
+  res.render('profile', { user });
+});
+
+// --- АДМИНКА ---
+app.get('/admin', requireAdmin, (req, res) => {
+  const users = Q.getAllUsers();
+  const boards = Q.getAllBoards();
+  const stats = Q.getTotalStats();
+  res.render('admin', { users, boards, stats });
+});
+
+app.post('/admin/set-role', requireAdmin, (req, res) => {
+  const { user_id, role } = req.body;
+  if (['user', 'mod', 'admin'].includes(role)) {
+    Q.setUserRole(parseInt(user_id), role);
+  }
+  res.redirect('/admin');
+});
+
+app.post('/admin/delete-thread', requireAdmin, (req, res) => {
+  const { thread_id, board_slug } = req.body;
+  Q.deleteThread(parseInt(thread_id));
+  res.redirect('/' + board_slug + '/');
+});
+
+app.post('/admin/pin-thread', requireAdmin, (req, res) => {
+  const { thread_id, board_slug, pin } = req.body;
+  Q.pinThread(parseInt(thread_id), parseInt(pin));
+  res.redirect('/' + board_slug + '/thread/' + thread_id);
+});
+
+app.post('/admin/lock-thread', requireAdmin, (req, res) => {
+  const { thread_id, board_slug, lock } = req.body;
+  Q.lockThread(parseInt(thread_id), parseInt(lock));
+  res.redirect('/' + board_slug + '/thread/' + thread_id);
+});
+
+app.post('/admin/delete-post', requireAdmin, (req, res) => {
+  const { post_id, board_slug, thread_id } = req.body;
+  Q.deletePost(parseInt(post_id));
+  res.redirect('/' + board_slug + '/thread/' + thread_id);
+});
+
+// --- ДОСКА ---
 app.get('/:board/', (req, res) => {
-  const boardSlug = req.params.board;
-  const board = queries.getBoard.get(boardSlug);
+  const board = Q.getBoard(req.params.board);
+  if (!board) return res.status(404).send('<h1>404</h1><a href="/">Nazad</a>');
 
-  if (!board) {
-    return res.status(404).send('<h1>404 -- Board not found</h1><a href="/">Back</a>');
-  }
-
-  const threads = queries.getThreadsByBoard.all(boardSlug);
-  const allBoards = queries.getAllBoards.all();
-
-  // Для каждого треда берём последние 3 ответа
-  const threadsWithPreviews = threads.map(t => {
-    const allPosts = queries.getPostsByThread.all(t.id);
-    const lastPosts = allPosts.slice(-3);
-    const omitted = allPosts.length > 3 ? allPosts.length - 3 : 0;
-    return {
-      ...t,
-      lastPosts,
-      omitted
-    };
-  });
-
-  res.render('board', {
-    board,
-    boards: allBoards,
-    threads: threadsWithPreviews
-  });
+  const threads = Q.getThreadsByBoard(board.slug);
+  const boards = Q.getAllBoards();
+  res.render('board', { board, boards, threads });
 });
 
-// Создание треда
-app.post('/:board/post', (req, res) => {
-  const boardSlug = req.params.board;
-  const board = queries.getBoard.get(boardSlug);
+// --- СОЗДАНИЕ ТРЕДА ---
+app.post('/:board/post', requireAuth, upload.single('file'), (req, res) => {
+  const board = Q.getBoard(req.params.board);
+  if (!board) return res.status(404).send('Board not found');
 
-  if (!board) {
-    return res.status(404).send('Board not found');
+  if (board.admin_only && req.session.user.role !== 'admin') {
+    return res.status(403).send('<h1>Tolko dlya adminov</h1><a href="/">Nazad</a>');
   }
 
-  let { name, subject, message } = req.body;
-
-  // Очистка
+  let { subject, message } = req.body;
   message = stripEmoji(sanitize(message || ''));
   subject = stripEmoji(sanitize(subject || ''));
 
   if (!message || message.length < 1) {
-    return res.status(400).send(
-      '<h2>Error: Message cannot be empty.</h2><a href="/' + boardSlug + '/">Back</a>'
-    );
+    return res.status(400).send('<h1>Soobshenie ne mozhet byt pustym</h1><a href="/' + board.slug + '/">Nazad</a>');
   }
 
-  if (message.length > 5000) {
-    return res.status(400).send(
-      '<h2>Error: Message too long (max 5000).</h2><a href="/' + boardSlug + '/">Back</a>'
-    );
+  const user = req.session.user;
+  const threadId = Q.createThread(board.slug, subject, user.username, user.id, message);
+
+  // Если приложен файл, добавляем как первый пост с картинкой
+  if (req.file) {
+    Q.createPost(threadId, board.slug, user.username, user.id, '[File attached to OP]', req.file.filename);
   }
 
-  const { displayName, tripcode } = generateTrip(name);
-  const authorField = tripcode ? displayName + ' ' + tripcode : displayName;
-
-  const result = queries.createThread.run(boardSlug, subject, authorField, message);
-
-  res.redirect('/' + boardSlug + '/thread/' + result.lastInsertRowid);
+  res.redirect('/' + board.slug + '/thread/' + threadId);
 });
 
-// Просмотр треда
+// --- ТРЕД ---
 app.get('/:board/thread/:id', (req, res) => {
-  const boardSlug = req.params.board;
-  const threadId = parseInt(req.params.id);
+  const board = Q.getBoard(req.params.board);
+  if (!board) return res.status(404).send('<h1>404</h1><a href="/">Nazad</a>');
 
-  const board = queries.getBoard.get(boardSlug);
-  if (!board) {
-    return res.status(404).send('<h1>404 -- Board not found</h1><a href="/">Back</a>');
-  }
+  const thread = Q.getThread(parseInt(req.params.id), board.slug);
+  if (!thread) return res.status(404).send('<h1>404</h1><a href="/' + board.slug + '/">Nazad</a>');
 
-  const thread = queries.getThread.get(threadId, boardSlug);
-  if (!thread) {
-    return res.status(404).send('<h1>404 -- Thread not found</h1><a href="/' + boardSlug + '/">Back</a>');
-  }
-
-  const posts = queries.getPostsByThread.all(threadId);
-  const allBoards = queries.getAllBoards.all();
-
-  res.render('thread', {
-    board,
-    boards: allBoards,
-    thread,
-    posts
-  });
+  const posts = Q.getPostsByThread(thread.id);
+  const boards = Q.getAllBoards();
+  res.render('thread', { board, boards, thread, posts });
 });
 
-// Ответ в тред
-app.post('/:board/thread/:id/reply', (req, res) => {
-  const boardSlug = req.params.board;
-  const threadId = parseInt(req.params.id);
+// --- ОТВЕТ В ТРЕД ---
+app.post('/:board/thread/:id/reply', requireAuth, upload.single('file'), async (req, res) => {
+  const board = Q.getBoard(req.params.board);
+  const thread = Q.getThread(parseInt(req.params.id), req.params.board);
 
-  const board = queries.getBoard.get(boardSlug);
-  const thread = queries.getThread.get(threadId, boardSlug);
+  if (!board || !thread) return res.status(404).send('Not found');
+  if (thread.is_locked) return res.status(403).send('<h1>Tema zakryta</h1><a href="/' + board.slug + '/">Nazad</a>');
 
-  if (!board || !thread) {
-    return res.status(404).send('Thread not found');
-  }
-
-  if (thread.is_locked) {
-    return res.status(403).send(
-      '<h2>Error: Thread is locked.</h2><a href="/' + boardSlug + '/thread/' + threadId + '">Back</a>'
-    );
-  }
-
-  let { name, message } = req.body;
-
+  let { message } = req.body;
   message = stripEmoji(sanitize(message || ''));
 
-  if (!message || message.length < 1) {
-    return res.status(400).send(
-      '<h2>Error: Message cannot be empty.</h2><a href="/' + boardSlug + '/thread/' + threadId + '">Back</a>'
-    );
+  if (!message && !req.file) {
+    return res.status(400).send('<h1>Napishite soobshenie ili prilozhite fayl</h1><a href="/' + board.slug + '/thread/' + thread.id + '">Nazad</a>');
   }
 
-  if (message.length > 5000) {
-    return res.status(400).send(
-      '<h2>Error: Message too long.</h2><a href="/' + boardSlug + '/thread/' + threadId + '">Back</a>'
-    );
+  const user = req.session.user;
+  const imagePath = req.file ? req.file.filename : '';
+  const postId = Q.createPost(thread.id, board.slug, user.username, user.id, message || '', imagePath);
+
+  // Bump
+  const isSage = (message || '').toLowerCase().includes('sage');
+  if (!isSage) Q.bumpThread(thread.id);
+
+  // Уведомление автору треда
+  if (thread.author_id && thread.author_id !== user.id) {
+    const threadAuthor = Q.getUserById(thread.author_id);
+    if (threadAuthor && threadAuthor.email_verified && threadAuthor.notify_replies) {
+      sendReplyNotification(threadAuthor.email, board.slug, thread.id, thread.subject, user.username);
+    }
   }
 
-  const { displayName, tripcode } = generateTrip(name);
-  const authorField = tripcode ? displayName + ' ' + tripcode : displayName;
-
-  const result = queries.createPost.run(threadId, boardSlug, authorField, message);
-
-  // Bump тред (если не sage)
-  const isSage = (name || '').toLowerCase().includes('sage');
-  if (!isSage) {
-    queries.bumpThread.run(threadId);
-  }
-
-  res.redirect('/' + boardSlug + '/thread/' + threadId + '#p' + result.lastInsertRowid);
+  res.redirect('/' + board.slug + '/thread/' + thread.id + '#p' + postId);
 });
 
-// === 404 ===
+// --- 404 ---
 app.use((req, res) => {
   res.status(404).send(`
-    <div style="font-family:monospace;text-align:center;margin-top:100px;">
-      <h1>404</h1>
-      <p>Nothing here.</p>
-      <a href="/">Back to QWA</a>
+    <div style="font-family:monospace;text-align:center;padding:50px;">
+      <h1>404</h1><p>Stranica ne naydena</p><a href="/">Na glavnuyu</a>
     </div>
   `);
 });
 
-// === ЗАПУСК ===
-app.listen(PORT, () => {
-  console.log(`[QWA] Forum running at http://localhost:${PORT}`);
-});
+// === START ===
+async function start() {
+  await initDB();
+  Q = buildQueries();
+  app.listen(PORT, () => console.log('[QWA] Forum running at http://localhost:' + PORT));
+}
+start();

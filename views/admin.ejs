@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin -- QWA</title>
+  <link rel="stylesheet" href="/style.css">
+</head><body>
+
+<div class="topbar">
+  <div class="topbar-left"><a href="/">QWA</a> <a href="/admin" class="active">Admin</a></div>
+  <div class="topbar-right">
+    <span style="color:#aaa;"><%= currentUser.username %> [ADMIN]</span>
+    <a href="/logout" style="color:#aaa;border:none;margin-left:10px;">Vyyti</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="stats-bar">
+    <div class="stat-item">Polzovateli: <span class="stat-num"><%= stats.total_users %></span></div>
+    <div class="stat-item">Temy: <span class="stat-num"><%= stats.total_threads %></span></div>
+    <div class="stat-item">Posty: <span class="stat-num"><%= stats.total_posts %></span></div>
+  </div>
+
+  <div class="section-box">
+    <div class="section-header">Polzovateli</div>
+    <table class="forum-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Imya</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Verified</th>
+          <th>Deystviya</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(function(u) { %>
+        <tr>
+          <td><%= u.id %></td>
+          <td><strong><%= u.username %></strong></td>
+          <td style="font-size:11px;color:#888;"><%= u.email %></td>
+          <td>
+            <% if(u.role==='admin'){ %><span style="background:#222;color:#fff;padding:1px 6px;font-size:10px;">ADMIN</span>
+            <% } else if(u.role==='mod'){ %><span style="background:#666;color:#fff;padding:1px 6px;font-size:10px;">MOD</span>
+            <% } else { %>user<% } %>
+          </td>
+          <td><%= u.email_verified ? 'Da' : 'Net' %></td>
+          <td>
+            <form method="POST" action="/admin/set-role" style="display:inline;">
+              <input type="hidden" name="user_id" value="<%= u.id %>">
+              <select name="role" style="font-size:11px;padding:2px;">
+                <option value="user" <%=u.role==='user'?'selected':''%>>user</option>
+                <option value="mod" <%=u.role==='mod'?'selected':''%>>mod</option>
+                <option value="admin" <%=u.role==='admin'?'selected':''%>>admin</option>
+              </select>
+              <button type="submit" style="font-size:11px;padding:2px 6px;cursor:pointer;">OK</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-box">
+    <div class="section-header">Razdely</div>
+    <table class="forum-table">
+      <thead><tr><th>Slug</th><th>Nazvanie</th><th>Admin only</th></tr></thead>
+      <tbody>
+        <% boards.forEach(function(b) { %>
+        <tr>
+          <td><a href="/<%= b.slug %>/">/<%= b.slug %>/</a></td>
+          <td><%= b.name %></td>
+          <td><%= b.admin_only ? 'Da' : 'Net' %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</body></html>

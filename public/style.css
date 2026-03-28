@@ -638,3 +638,128 @@ a:hover {
     align-items: center;
   }
 }
+/* === AUTH FORMS === */
+
+.form-row-stack {
+  margin-bottom: 12px;
+}
+
+.form-row-stack label {
+  display: block;
+  font-weight: bold;
+  font-size: 12px;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.form-row-stack input[type="text"],
+.form-row-stack input[type="email"],
+.form-row-stack input[type="password"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #CCC;
+  font-size: 13px;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  background: #FAFAFA;
+}
+
+.form-row-stack input:focus {
+  border-color: #888;
+  outline: none;
+  background: #FFF;
+}
+
+.error-box {
+  background-color: #F5F5F5;
+  border: 1px solid #CC0000;
+  border-left: 4px solid #CC0000;
+  color: #CC0000;
+  padding: 8px 12px;
+  margin-bottom: 15px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* === FILE UPLOADS === */
+
+.post-file {
+  margin: 8px 0;
+}
+
+.post-image {
+  max-width: 300px;
+  max-height: 300px;
+  border: 1px solid #DDD;
+  cursor: pointer;
+}
+
+.post-image:hover {
+  border-color: #888;
+}
+
+.file-link {
+  display: inline-block;
+  background: #F0F0F0;
+  border: 1px solid #DDD;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #333;
+  font-family: monospace;
+}
+
+.file-link:hover {
+  background: #E8E8E8;
+  border-color: #999;
+}
+
+input[type="file"] {
+  font-size: 12px;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+/* === ADMIN === */
+
+.admin-controls {
+  background: #F8F8F8;
+  border: 1px solid #DDD;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-btn {
+  background: #333;
+  color: #FFF;
+  border: none;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.admin-btn:hover {
+  background: #555;
+}
+
+.admin-btn-danger {
+  background: #880000;
+}
+
+.admin-btn-danger:hover {
+  background: #AA0000;
+}
+
+.admin-btn-sm {
+  background: #888;
+  color: #FFF;
+  border: none;
+  padding: 1px 5px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.admin-btn-sm:hover {
+  background: #AA0000;
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profil -- QWA</title>
+  <link rel="stylesheet" href="/style.css">
+</head><body>
+
+<div class="topbar">
+  <div class="topbar-left"><a href="/">QWA</a></div>
+  <div class="topbar-right">
+    <span style="color:#aaa;"><%= currentUser.username %></span>
+    <a href="/logout" style="color:#aaa;border:none;margin-left:10px;">Vyyti</a>
+  </div>
+</div>
+
+<div class="container" style="max-width:500px;margin-top:30px;">
+  <div class="section-box">
+    <div class="section-header">Profil</div>
+    <div style="padding:20px;">
+      <table style="width:100%;font-size:13px;">
+        <tr><td style="padding:8px;color:#888;width:40%;">Imya:</td><td style="padding:8px;font-weight:bold;"><%= user.username %></td></tr>
+        <tr><td style="padding:8px;color:#888;">Email:</td><td style="padding:8px;"><%= user.email %></td></tr>
+        <tr><td style="padding:8px;color:#888;">Rol:</td><td style="padding:8px;">
+          <% if(user.role==='admin'){ %><span style="background:#222;color:#fff;padding:2px 8px;font-size:11px;font-weight:bold;">ADMIN</span>
+          <% } else if(user.role==='mod'){ %><span style="background:#666;color:#fff;padding:2px 8px;font-size:11px;">MOD</span>
+          <% } else { %><span style="color:#888;">User</span><% } %>
+        </td></tr>
+        <tr><td style="padding:8px;color:#888;">Registraciya:</td><td style="padding:8px;"><%= formatDate(user.created_at) %></td></tr>
+        <tr><td style="padding:8px;color:#888;">Email podtverzhden:</td><td style="padding:8px;"><%= user.email_verified ? 'Da' : 'Net' %></td></tr>
+      </table>
+
+      <% if (user.role === 'admin') { %>
+        <div style="margin-top:15px;text-align:center;">
+          <a href="/admin" style="background:#222;color:#fff;padding:8px 20px;border:none;font-weight:bold;font-size:13px;">Admin panel</a>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+</body></html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registraciya -- QWA</title>
+  <link rel="stylesheet" href="/style.css">
+</head><body>
+
+<div class="topbar">
+  <div class="topbar-left"><a href="/">QWA</a></div>
+  <div class="topbar-right"><a href="/login" style="color:#aaa;border:none;">Voyti</a></div>
+</div>
+
+<div class="container" style="max-width:450px;margin-top:40px;">
+  <div class="section-box">
+    <div class="section-header">Registraciya</div>
+    <div style="padding:20px;">
+
+      <% if (error) { %>
+        <div class="error-box"><%= error %></div>
+      <% } %>
+
+      <% if (step === 'form') { %>
+        <form method="POST" action="/register">
+          <div class="form-row-stack">
+            <label>Imya polzovatelya</label>
+            <input type="text" name="username" required minlength="3" maxlength="20" placeholder="tolko bukvy, cifry, _">
+          </div>
+          <div class="form-row-stack">
+            <label>Email</label>
+            <input type="email" name="email" required placeholder="gmail.com / mail.ru / yandex.ru">
+            <div class="form-hint">Prinimayutsya tolko Gmail, Mail.ru, Yandex</div>
+          </div>
+          <div class="form-row-stack">
+            <label>Parol</label>
+            <input type="password" name="password" required minlength="6" placeholder="minimum 6 simvolov">
+          </div>
+          <div class="form-row-stack">
+            <label>Povtorite parol</label>
+            <input type="password" name="password2" required>
+          </div>
+          <button type="submit" class="form-submit" style="width:100%;margin-top:10px;">Zaregistrirovatsya</button>
+        </form>
+        <div style="text-align:center;margin-top:15px;font-size:12px;">
+          Uzhe est akkaunt? <a href="/login">Voyti</a>
+        </div>
+
+      <% } else if (step === 'verify') { %>
+        <p style="margin-bottom:15px;font-size:13px;">
+          Kod otpravlen na <strong><%= email %></strong>
+        </p>
+        <form method="POST" action="/verify">
+          <div class="form-row-stack">
+            <label>Kod podtverzhdeniya</label>
+            <input type="text" name="code" required maxlength="6" placeholder="6 cifr" style="font-size:24px;text-align:center;letter-spacing:8px;">
+          </div>
+          <button type="submit" class="form-submit" style="width:100%;margin-top:10px;">Podtverdit</button>
+        </form>
+      <% } %>
+
+    </div>
+  </div>
+</div>
+
+</body></html>
