@@ -6,20 +6,19 @@ a { color:#0000EE; text-decoration:none; }
 a:hover { color:#DD0000; }
 
 /* === TOPBAR === */
-.topbar { background:#800000; padding:4px 10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; }
+.topbar { background:#800000; padding:4px 10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; font-size:12px; }
 .topbar-logo { color:#FFCC99; font-size:16px; font-weight:bold; font-family:"Courier New",monospace; letter-spacing:2px; }
 .topbar-logo:hover { color:#fff; }
 .topbar-right { display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
 
-.top-btn { padding:2px 8px; font-size:11px; font-family:inherit; border:none; cursor:pointer; text-decoration:none; color:#FFCC99; }
-.top-btn:hover { color:#fff; }
+.top-btn { padding:3px 10px; font-size:11px; font-family:inherit; cursor:pointer; text-decoration:none; border:none; }
 .top-btn-dark { background:#600000; color:#FFCC99; }
 .top-btn-dark:hover { background:#400000; color:#fff; }
 .top-btn-red { background:#CC0000; color:#fff; }
 .top-btn-red:hover { background:#FF0000; color:#fff; }
-.top-btn-outline { color:#FFCC99; border:1px solid #FFCC99; }
+.top-btn-outline { color:#FFCC99; border:1px solid #FFCC99; background:none; }
 .top-btn-outline:hover { color:#fff; border-color:#fff; }
-.top-btn-ghost { color:#AA8866; }
+.top-btn-ghost { color:#AA8866; background:none; }
 .top-btn-ghost:hover { color:#fff; }
 
 /* === HEADER === */
@@ -35,9 +34,9 @@ a:hover { color:#DD0000; }
 /* === CONTAINER === */
 .container { max-width:900px; margin:10px auto; padding:0 10px; }
 
-/* === BOARD BUTTONS === */
+/* === BOARD BUTTONS (карточки разделов) === */
 .board-buttons { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
-.board-btn { display:block; background:#F0E0D6; border:1px solid #D9BFB7; padding:8px 12px; color:#800000; min-width:130px; }
+.board-btn { display:block; background:#F0E0D6; border:1px solid #D9BFB7; padding:8px 12px; color:#800000; position:relative; }
 .board-btn:hover { background:#EEDDCC; color:#800000; }
 .board-btn-name { font-size:13px; font-weight:bold; }
 .board-btn-desc { font-size:10px; color:#AA5555; }
@@ -45,23 +44,22 @@ a:hover { color:#DD0000; }
 .board-btn-badge { background:#800000; color:#FFFFEE; font-size:9px; padding:1px 4px; position:absolute; top:3px; right:3px; }
 
 /* === BIG BUTTON === */
-.big-btn { display:inline-block; background:#800000; color:#FFFFEE; padding:6px 20px; font-size:13px; font-weight:bold; border:none; cursor:pointer; font-family:inherit; }
+.big-btn { display:inline-block; background:#800000; color:#FFFFEE; padding:6px 20px; font-size:13px; font-weight:bold; border:none; cursor:pointer; font-family:inherit; text-decoration:none; }
 .big-btn:hover { background:#AA0000; color:#fff; }
 
 /* === SECTION BOX === */
 .section-box { background:#F0E0D6; border:1px solid #D9BFB7; margin-bottom:10px; }
 .section-header { background:#800000; color:#FFFFEE; padding:6px 10px; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; }
-.section-header-light { background:#EA8; color:#800000; padding:6px 10px; font-size:12px; font-weight:bold; border-bottom:1px solid #D9BFB7; }
 
 /* === STATS === */
 .stats-bar { background:#F0E0D6; border:1px solid #D9BFB7; padding:6px 10px; margin-bottom:10px; display:flex; justify-content:center; gap:20px; font-size:12px; color:#800000; }
+.stat-item { display:flex; align-items:center; gap:5px; }
 .stat-num { font-weight:bold; }
 
 /* === SEARCH === */
 .search-bar { display:flex; gap:4px; margin-bottom:10px; }
 .search-bar input { flex:1; padding:4px 8px; border:1px solid #AAA; font-size:12px; font-family:inherit; }
 .search-bar button { background:#800000; color:#FFFFEE; border:none; padding:4px 12px; font-size:12px; cursor:pointer; font-family:inherit; }
-.search-bar button:hover { background:#AA0000; }
 
 /* === TWO COLUMNS === */
 .two-columns { display:flex; gap:10px; }
@@ -73,7 +71,6 @@ a:hover { color:#DD0000; }
 .recent-posts { padding:0; }
 .recent-item { padding:6px 8px; border-bottom:1px solid #D9BFB7; font-size:11px; }
 .recent-item:last-child { border-bottom:none; }
-.recent-author { font-size:11px; }
 .recent-text { color:#800000; }
 .recent-meta { color:#AA5555; font-size:10px; }
 .recent-meta a { color:#800000; }
@@ -94,15 +91,13 @@ a:hover { color:#DD0000; }
 .form-toggle:hover { background:#AA0000; }
 .form-body { padding:10px; display:none; border-top:1px solid #D9BFB7; }
 .form-body.visible { display:block; }
-.form-row { margin-bottom:6px; display:flex; align-items:flex-start; }
-.form-label { width:80px; font-weight:bold; font-size:12px; color:#800000; padding-top:4px; background:#EA8; padding:3px 6px; }
+.form-row { margin-bottom:4px; display:flex; align-items:flex-start; }
+.form-label { background:#EA8; font-weight:bold; font-size:12px; padding:3px 8px; color:#800000; width:90px; }
 .form-input { flex:1; }
-.form-input input[type="text"], .form-input textarea {
-  width:100%; padding:3px 6px; border:1px solid #AAA; font-size:12px; font-family:inherit; background:#fff;
-}
+.form-input input[type="text"], .form-input textarea { width:100%; padding:3px 6px; border:1px solid #AAA; font-size:12px; font-family:inherit; }
 .form-input textarea { height:100px; resize:vertical; }
-.form-submit { background:#800000; color:#FFFFEE; border:none; padding:4px 15px; font-size:12px; font-weight:bold; cursor:pointer; font-family:inherit; }
-.form-submit:hover { background:#AA0000; }
+.form-submit { background:#F0E0D6; border:1px solid #AAA; padding:3px 12px; font-size:12px; font-weight:bold; color:#800000; cursor:pointer; font-family:inherit; }
+.form-submit:hover { background:#EEDDCC; }
 .form-hint { font-size:10px; color:#AA5555; margin-top:2px; }
 
 /* === AUTH FORMS === */
@@ -111,35 +106,35 @@ a:hover { color:#DD0000; }
 .form-row-stack input[type="text"], .form-row-stack input[type="email"], .form-row-stack input[type="password"] {
   width:100%; padding:4px 8px; border:1px solid #AAA; font-size:12px; font-family:inherit;
 }
-.error-box { background:#FFFFEE; border:1px solid #CC0000; border-left:4px solid #CC0000; color:#CC0000; padding:6px 10px; margin-bottom:10px; font-size:12px; font-weight:bold; }
+.error-box { border:1px solid #CC0000; border-left:4px solid #CC0000; color:#CC0000; padding:6px 10px; margin-bottom:10px; font-size:12px; font-weight:bold; }
 
 /* === POSTS === */
-.post { background:#F0E0D6; border:1px solid #D9BFB7; margin-bottom:5px; padding:8px; }
-.post.op-post { border-left:4px solid #800000; }
-.post.reply-post { border-left:4px solid #D9BFB7; margin-left:20px; background:#D6DAF0; border-color:#B7C5D9; }
-.post-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid #D9BFB7; flex-wrap:wrap; gap:4px; }
-.post-head-left { display:flex; align-items:center; gap:6px; }
-.post-avatar-link { border:none; }
-.post-author-link { color:#117743; font-weight:bold; }
+.post { background:#F0E0D6; border:1px solid #D9BFB7; margin-bottom:5px; padding:8px; overflow:hidden; }
+.post.op-post { }
+.post.reply-post { background:#D6DAF0; border:1px solid #B7C5D9; margin-left:25px; display:inline-block; min-width:500px; max-width:800px; }
+.post-head { margin-bottom:4px; font-size:12px; }
+.post-head-left { display:inline; }
+.post-avatar-link { border:none; text-decoration:none; }
+.post-author-link { color:#117743; font-weight:bold; text-decoration:none; }
 .post-author-link:hover { color:#115533; }
 .post-subject { color:#0F0C5D; font-weight:bold; font-size:13px; }
 .post-date { color:#AA5555; font-size:11px; }
-.post-num { font-size:11px; color:#AA5555; }
+.post-num { color:#AA5555; font-size:11px; }
 .post-num a { color:#AA5555; }
-.post-body { font-size:13px; color:#000; word-wrap:break-word; line-height:1.5; }
+.post-body { margin:5px 0; font-size:13px; color:#000; word-wrap:break-word; }
 .greentext { color:#789922; }
-.quotelink { color:#DD0000; }
+.quotelink { color:#DD0000; text-decoration:underline; }
 .mention { color:#0000EE; font-weight:bold; }
 
 /* === FILES === */
 .post-file { margin:4px 0; }
 .post-image { max-width:250px; max-height:250px; border:1px solid #D9BFB7; }
-.file-link { background:#F0E0D6; border:1px solid #D9BFB7; padding:4px 8px; font-size:11px; font-family:monospace; }
+.file-link { background:#F0E0D6; border:1px solid #D9BFB7; padding:3px 8px; font-size:11px; font-family:monospace; }
 
 /* === AVATARS === */
-.user-avatar { width:30px; height:30px; border-radius:50%; border:1px solid #D9BFB7; object-fit:cover; }
+.user-avatar { width:30px; height:30px; border-radius:50%; border:1px solid #D9BFB7; object-fit:cover; vertical-align:middle; margin-right:4px; }
 .user-avatar-big { width:80px; height:80px; border-radius:50%; border:2px solid #D9BFB7; object-fit:cover; }
-.avatar-default { width:30px; height:30px; border-radius:50%; background:#D9BFB7; display:inline-flex; align-items:center; justify-content:center; font-size:13px; font-weight:bold; color:#800000; }
+.avatar-default { width:30px; height:30px; border-radius:50%; background:#D9BFB7; display:inline-flex; align-items:center; justify-content:center; font-size:13px; font-weight:bold; color:#800000; vertical-align:middle; margin-right:4px; }
 .avatar-default-big { width:80px; height:80px; border-radius:50%; background:#D9BFB7; display:inline-flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold; color:#800000; margin:0 auto; }
 
 /* === AVATAR UPLOAD === */
@@ -189,7 +184,7 @@ a:hover { color:#DD0000; }
 .empty-state { text-align:center; padding:30px; color:#AA5555; font-size:13px; }
 
 /* === FOOTER === */
-.footer { background:#800000; color:#FFCC99; text-align:center; padding:8px; margin-top:20px; font-size:11px; }
+.footer { background:#800000; color:#FFCC99; text-align:center; padding:6px; margin-top:15px; font-size:11px; }
 .footer a { color:#FFCC99; }
 
 /* === LOADING === */
@@ -201,8 +196,7 @@ a:hover { color:#DD0000; }
 
 @media(max-width:700px) {
   .container { padding:0 5px; }
-  .post.reply-post { margin-left:8px; }
+  .post.reply-post { margin-left:10px; min-width:90%; max-width:95%; }
   .form-row { flex-direction:column; }
   .form-label { width:auto; }
-  .board-buttons { gap:4px; }
 }
