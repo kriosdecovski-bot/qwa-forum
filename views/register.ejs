@@ -4,7 +4,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Регистрация -- QWA</title>
   <link rel="stylesheet" href="/style.css">
+  <style>
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .loading-overlay.active {
+      display: flex;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #333;
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .loading-text {
+      color: #fff;
+      font-family: monospace;
+      font-size: 16px;
+      margin-top: 20px;
+      letter-spacing: 2px;
+    }
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s infinite;
+    }
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+  </style>
 </head><body>
+
+<!-- Загрузочный экран -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Создаём аккаунт<span class="loading-dots"></span></div>
+</div>
 
 <div class="topbar">
   <div class="topbar-left"><a href="/">QWA</a></div>
@@ -18,29 +71,52 @@
       <% if (error) { %><div class="error-box"><%= error %></div><% } %>
 
       <% if (step === 'form') { %>
-        <form method="POST" action="/register">
-          <div class="form-row-stack"><label>Имя пользователя</label>
-            <input type="text" name="username" required minlength="3" maxlength="20" placeholder="Буквы, цифры, _"></div>
-          <div class="form-row-stack"><label>Email</label>
+        <form method="POST" action="/register" id="regForm" onsubmit="showLoading('Создаём аккаунт')">
+          <div class="form-row-stack">
+            <label>Имя пользователя</label>
+            <input type="text" name="username" required minlength="3" maxlength="20" placeholder="Буквы, цифры, _">
+          </div>
+          <div class="form-row-stack">
+            <label>Email</label>
             <input type="email" name="email" required placeholder="Gmail, Mail.ru или Yandex">
-            <div class="form-hint">Принимаются только Gmail, Mail.ru, Yandex</div></div>
-          <div class="form-row-stack"><label>Пароль</label>
-            <input type="password" name="password" required minlength="6" placeholder="Минимум 6 символов"></div>
-          <div class="form-row-stack"><label>Повторите пароль</label>
-            <input type="password" name="password2" required></div>
+            <div class="form-hint">Принимаются только Gmail, Mail.ru, Yandex</div>
+          </div>
+          <div class="form-row-stack">
+            <label>Пароль</label>
+            <input type="password" name="password" required minlength="6" placeholder="Минимум 6 символов">
+          </div>
+          <div class="form-row-stack">
+            <label>Повторите пароль</label>
+            <input type="password" name="password2" required>
+          </div>
           <button type="submit" class="form-submit" style="width:100%;margin-top:10px;">Зарегистрироваться</button>
         </form>
-        <div style="text-align:center;margin-top:15px;font-size:12px;">Уже есть аккаунт? <a href="/login">Войти</a></div>
+        <div style="text-align:center;margin-top:15px;font-size:12px;">
+          Уже есть аккаунт? <a href="/login">Войти</a>
+        </div>
 
       <% } else if (step === 'verify') { %>
         <p style="margin-bottom:15px;">Код отправлен на <strong><%= email %></strong></p>
-        <form method="POST" action="/verify">
-          <div class="form-row-stack"><label>Код подтверждения</label>
-            <input type="text" name="code" required maxlength="6" placeholder="6 цифр" style="font-size:24px;text-align:center;letter-spacing:8px;"></div>
+        <form method="POST" action="/verify" onsubmit="showLoading('Проверяем код')">
+          <div class="form-row-stack">
+            <label>Код подтверждения</label>
+            <input type="text" name="code" required maxlength="6" placeholder="6 цифр" 
+              style="font-size:24px;text-align:center;letter-spacing:8px;">
+          </div>
           <button type="submit" class="form-submit" style="width:100%;margin-top:10px;">Подтвердить</button>
         </form>
       <% } %>
     </div>
   </div>
 </div>
+
+<script>
+function showLoading(text) {
+  var overlay = document.getElementById('loadingOverlay');
+  var loadingText = overlay.querySelector('.loading-text');
+  loadingText.innerHTML = text + '<span class="loading-dots"></span>';
+  overlay.classList.add('active');
+}
+</script>
+
 </body></html>
