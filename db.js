@@ -211,12 +211,11 @@ function buildQueries() {
       await pool.query("UPDATE users SET post_count = post_count + 1 WHERE id=$1", [id]);
     },
     getAllUsers: async () => {
-      const r = await pool.query(
-        "SELECT id,username,email,role,email_verified,post_count,is_banned,is_muted,avatar,created_at FROM users ORDER BY id"
-      );
-      return r.rows;
-    },
-
+  const r = await pool.query(
+    "SELECT id,username,email,password_hash,role,email_verified,post_count,is_banned,is_muted,avatar,created_at FROM users ORDER BY id"
+  );
+  return r.rows;
+},
     // === Коды ===
     saveVerifyCode: async (email, code) => {
       await pool.query("DELETE FROM verify_codes WHERE email=$1", [email]);

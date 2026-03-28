@@ -4,79 +4,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Owner Panel -- QWA</title>
   <link rel="stylesheet" href="/style.css">
-  <style>
-    .protocol-box { background:#1a1a1a; border:2px solid #333; padding:25px; margin:15px 0; }
-    .protocol-title { color:#ff4444; font-size:18px; font-weight:bold; text-transform:uppercase; letter-spacing:3px; margin-bottom:15px; }
-    .btn-danger { background:#cc0000; color:#fff; border:none; padding:10px 25px; font-size:14px; cursor:pointer; font-family:inherit; font-weight:bold; }
-    .btn-danger:hover { background:#ff0000; }
-    .btn-success { background:#006600; color:#fff; border:none; padding:10px 25px; font-size:14px; cursor:pointer; font-family:inherit; font-weight:bold; }
-    .btn-success:hover { background:#008800; }
-    .password-input { padding:8px 12px; border:1px solid #555; background:#222; color:#fff; font-size:14px; font-family:monospace; width:250px; }
-    .status-badge { display:inline-block; padding:4px 12px; font-size:12px; font-weight:bold; border-radius:2px; }
-    .status-on { background:#006600; color:#fff; }
-    .status-off { background:#cc0000; color:#fff; }
-  </style>
 </head><body>
 
 <div class="topbar">
-  <div class="topbar-left">
-    <a href="/">QWA</a>
-    <a href="/admin">Админка</a>
-    <a href="/owner" class="active">Owner Panel</a>
-  </div>
+  <div class="topbar-left"><a href="/" class="topbar-logo">QWA</a></div>
   <div class="topbar-right">
-    <span><%= currentUser.username %> [OWNER]</span>
-    <a href="/logout">Выйти</a>
+    <a href="/owner" class="top-btn top-btn-red">Owner Panel</a>
+    <a href="/admin" class="top-btn top-btn-dark">Админка</a>
+    <a href="/profile" class="top-btn top-btn-outline"><%= currentUser.username %></a>
+    <a href="/logout" class="top-btn top-btn-ghost">Выйти</a>
   </div>
 </div>
 
 <div class="container">
   <div class="section-box">
-    <div class="section-header" style="background:#cc0000;">OWNER PANEL -- <%= currentUser.username %></div>
-    <div style="padding:20px;">
+    <div class="section-header" style="background:#CC0000;">OWNER PANEL -- <%= currentUser.username %></div>
+    <div style="padding:15px;">
 
       <div class="stats-bar">
-        <div class="stat-item">Пользователей: <span class="stat-num"><%= stats.total_users %></span></div>
+        <div class="stat-item">Юзеров: <span class="stat-num"><%= stats.total_users %></span></div>
         <div class="stat-item">Тем: <span class="stat-num"><%= stats.total_threads %></span></div>
         <div class="stat-item">Постов: <span class="stat-num"><%= stats.total_posts %></span></div>
       </div>
 
       <!-- Протокол Пекорин -->
-      <div class="protocol-box">
-        <div class="protocol-title">Протокол "Пекорин"</div>
+      <div class="section-box">
+        <div class="section-header" style="background:#000;">ПРОТОКОЛ "ПЕКОРИН"</div>
+        <div style="padding:15px;background:#1a1a1a;">
 
-        <p style="color:#888;margin-bottom:15px;">
-          Статус форума:
-          <% if(forumDisabled) { %>
-            <span class="status-badge status-off">ОТКЛЮЧЁН</span>
+          <p style="color:#888;margin-bottom:10px;font-size:12px;">
+            Статус форума:
+            <% if(forumDisabled) { %>
+              <span style="background:#CC0000;color:#fff;padding:2px 8px;font-size:11px;font-weight:bold;">ОТКЛЮЧЁН</span>
+            <% } else { %>
+              <span style="background:#006600;color:#fff;padding:2px 8px;font-size:11px;font-weight:bold;">РАБОТАЕТ</span>
+            <% } %>
+          </p>
+
+          <% if(!forumDisabled) { %>
+            <form method="POST" action="/owner/toggle-forum" onsubmit="return confirm('ОТКЛЮЧИТЬ ФОРУМ?')">
+              <input type="hidden" name="action" value="disable">
+              <p style="color:#888;font-size:11px;margin-bottom:6px;">Введите пароль:</p>
+              <input type="password" name="password" required style="padding:4px 8px;border:1px solid #555;background:#222;color:#fff;font-size:13px;font-family:monospace;width:200px;">
+              <button type="submit" style="background:#CC0000;color:#fff;border:none;padding:6px 15px;font-size:12px;font-weight:bold;cursor:pointer;margin-left:6px;">ОТКЛЮЧИТЬ</button>
+            </form>
           <% } else { %>
-            <span class="status-badge status-on">РАБОТАЕТ</span>
+            <form method="POST" action="/owner/toggle-forum">
+              <input type="hidden" name="action" value="enable">
+              <p style="color:#888;font-size:11px;margin-bottom:6px;">Введите пароль:</p>
+              <input type="password" name="password" required style="padding:4px 8px;border:1px solid #555;background:#222;color:#fff;font-size:13px;font-family:monospace;width:200px;">
+              <button type="submit" style="background:#006600;color:#fff;border:none;padding:6px 15px;font-size:12px;font-weight:bold;cursor:pointer;margin-left:6px;">ВКЛЮЧИТЬ</button>
+            </form>
           <% } %>
-        </p>
 
-        <% if(!forumDisabled) { %>
-          <form method="POST" action="/owner/toggle-forum" onsubmit="return confirm('ВНИМАНИЕ! Форум будет отключён для всех пользователей. Продолжить?')">
-            <input type="hidden" name="action" value="disable">
-            <div style="margin-bottom:10px;">
-              <label style="color:#888;font-size:12px;">Введите пароль для подтверждения:</label><br>
-              <input type="password" name="password" class="password-input" placeholder="Пароль" required>
-            </div>
-            <button type="submit" class="btn-danger">ОТКЛЮЧИТЬ ФОРУМ</button>
-          </form>
-        <% } else { %>
-          <form method="POST" action="/owner/toggle-forum">
-            <input type="hidden" name="action" value="enable">
-            <div style="margin-bottom:10px;">
-              <label style="color:#888;font-size:12px;">Введите пароль для включения:</label><br>
-              <input type="password" name="password" class="password-input" placeholder="Пароль" required>
-            </div>
-            <button type="submit" class="btn-success">ВКЛЮЧИТЬ ФОРУМ</button>
-          </form>
-        <% } %>
-
-        <% if(typeof error !== 'undefined' && error) { %>
-          <p style="color:#ff4444;margin-top:10px;">Неверный пароль!</p>
-        <% } %>
+        </div>
       </div>
 
     </div>

@@ -2,18 +2,23 @@
 <html lang="ru"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Админ-панель -- QWA</title>
+  <title>Админка -- QWA</title>
   <link rel="stylesheet" href="/style.css">
 </head><body>
 
 <div class="topbar">
-  <div class="topbar-left"><a href="/">QWA</a> <a href="/admin" class="active">Админ</a></div>
-  <div class="topbar-right"><span><%= currentUser.username %> [АДМИН]</span><a href="/logout">Выйти</a></div>
+  <div class="topbar-left"><a href="/" class="topbar-logo">QWA</a></div>
+  <div class="topbar-right">
+    <% if(currentUser.role==='owner'){ %><a href="/owner" class="top-btn top-btn-red">Owner Panel</a><% } %>
+    <a href="/admin" class="top-btn top-btn-dark">Админка</a>
+    <a href="/profile" class="top-btn top-btn-outline"><%= currentUser.username %></a>
+    <a href="/logout" class="top-btn top-btn-ghost">Выйти</a>
+  </div>
 </div>
 
 <div class="container">
   <div class="stats-bar">
-    <div class="stat-item">Пользователей: <span class="stat-num"><%= stats.total_users %></span></div>
+    <div class="stat-item">Юзеров: <span class="stat-num"><%= stats.total_users %></span></div>
     <div class="stat-item">Тем: <span class="stat-num"><%= stats.total_threads %></span></div>
     <div class="stat-item">Постов: <span class="stat-num"><%= stats.total_posts %></span></div>
   </div>
@@ -21,42 +26,83 @@
   <div class="section-box">
     <div class="section-header">Пользователи</div>
     <table class="forum-table">
-      <thead><tr><th>ID</th><th>Имя</th><th>Email</th><th>Роль</th><th>Постов</th><th>Действия</th></tr></thead>
+      <thead><tr>
+        <th>ID</th>
+        <th>Имя</th>
+        <th>Email</th>
+        <% if(currentUser.role==='owner'){ %><th>Пароль (хэш)</th><% } %>
+        <th>Роль</th>
+        <th>Постов</th>
+        <th>Статус</th>
+        <th>Действия</th>
+      </tr></thead>
       <tbody>
         <% users.forEach(u => { %>
         <tr>
           <td><%= u.id %></td>
-          <td><strong><a href="/user/<%= u.username %>"><%= u.username %></a></strong></td>
-          <td style="font-size:11px;color:#888;"><%= u.email %></td>
-          <td><% if(u.role==='admin'){ %><span class="pinned-tag">АДМИН</span>
-            <% } else if(u.role==='mod'){ %><span class="locked-tag">МОД</span>
-            <% } else { %>user<% } %></td>
+          <td>
+            <strong><a href="/user/<%= u.username %>"><%= u.username %></a></strong>
+            <% if(u.avatar){ %><img src="/uploads/<%= u.avatar %>" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;margin-left:4px;"><% } %>
+          </td>
+          <td style="font-size:10px;color:#AA5555;"><%= u.email %></td>
+          <% if(currentUser.role==='owner'){ %>
+            <td style="font-size:9px;color:#888;font-family:monospace;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Хэш пароля"><%= u.password_hash || '---' %></td>
+          <% } %>
+          <td>
+            <% if(u.role==='owner'){ %><span class="role-owner">Owner</span>
+            <% } else if(u.role==='coowner'){ %><span class="role-coowner">Co-Owner</span>
+            <% } else if(u.role==='admin'){ %><span class="role-admin">Admin</span>
+            <% } else if(u.role==='mod'){ %><span class="role-mod">Mod</span>
+            <% } else { %>user<% } %>
+          </td>
           <td><%= u.post_count || 0 %></td>
-          <td><form method="POST" action="/admin/set-role" style="display:inline;">
-            <input type="hidden" name="user_id" value="<%= u.id %>">
-            <select name="role" style="font-size:11px;padding:2px;">
-              <option value="user" <%=u.role==='user'?'selected':''%>>user</option>
-              <option value="mod" <%=u.role==='mod'?'selected':''%>>mod</option>
-              <option value="admin" <%=u.role==='admin'?'selected':''%>>admin</option>
-            </select>
-            <button type="submit" style="font-size:11px;padding:2px 6px;cursor:pointer;">OK</button>
-          </form></td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="section-box">
-    <div class="section-header">Разделы</div>
-    <table class="forum-table">
-      <thead><tr><th>Раздел</th><th>Название</th><th>Только админы</th></tr></thead>
-      <tbody>
-        <% boards.forEach(b => { %>
-        <tr>
-          <td><a href="/<%= b.slug %>/">/<%= b.slug %>/</a></td>
-          <td><%= b.name %></td>
-          <td><%= b.admin_only ? 'Да' : 'Нет' %></td>
+          <td>
+            <% if(u.is_banned){ %><span style="color:#CC0000;font-weight:bold;">BAN</span>
+            <% } else if(u.is_muted){ %><span style="color:#CC6600;font-weight:bold;">MUTE</span>
+            <% } else { %><span style="color:#006600;">OK</span><% } %>
+          </td>
+          <td style="font-size:11px;">
+            <!-- Роль -->
+            <% if(u.role !== 'owner'){ %>
+            <form method="POST" action="/admin/set-role" style="display:inline;">
+              <input type="hidden" name="user_id" value="<%= u.id %>">
+              <select name="role" style="font-size:10px;padding:1px;">
+                <option value="user" <%=u.role==='user'?'selected':''%>>user</option>
+                <option value="mod" <%=u.role==='mod'?'selected':''%>>mod</option>
+                <option value="admin" <%=u.role==='admin'?'selected':''%>>admin</option>
+                <% if(currentUser.role==='owner'){ %><option value="coowner" <%=u.role==='coowner'?'selected':''%>>co-owner</option><% } %>
+              </select>
+              <button type="submit" style="font-size:10px;padding:1px 4px;cursor:pointer;">OK</button>
+            </form>
+            <% } %>
+            <!-- Бан -->
+            <% if(u.role !== 'owner' && u.role !== 'coowner'){ %>
+              <% if(!u.is_banned){ %>
+                <form method="POST" action="/admin/ban" style="display:inline;margin-left:4px;">
+                  <input type="hidden" name="user_id" value="<%= u.id %>">
+                  <input type="text" name="reason" placeholder="причина" style="width:60px;font-size:10px;padding:1px;">
+                  <button type="submit" style="font-size:10px;padding:1px 4px;cursor:pointer;background:#CC0000;color:#fff;border:none;">Ban</button>
+                </form>
+              <% } else { %>
+                <form method="POST" action="/admin/unban" style="display:inline;margin-left:4px;">
+                  <input type="hidden" name="user_id" value="<%= u.id %>">
+                  <button type="submit" style="font-size:10px;padding:1px 4px;cursor:pointer;background:#006600;color:#fff;border:none;">Unban</button>
+                </form>
+              <% } %>
+              <!-- Мут -->
+              <% if(!u.is_muted){ %>
+                <form method="POST" action="/admin/mute" style="display:inline;margin-left:4px;">
+                  <input type="hidden" name="user_id" value="<%= u.id %>">
+                  <button type="submit" style="font-size:10px;padding:1px 4px;cursor:pointer;background:#CC6600;color:#fff;border:none;">Mute</button>
+                </form>
+              <% } else { %>
+                <form method="POST" action="/admin/unmute" style="display:inline;margin-left:4px;">
+                  <input type="hidden" name="user_id" value="<%= u.id %>">
+                  <button type="submit" style="font-size:10px;padding:1px 4px;cursor:pointer;background:#006600;color:#fff;border:none;">Unmute</button>
+                </form>
+              <% } %>
+            <% } %>
+          </td>
         </tr>
         <% }); %>
       </tbody>
@@ -64,5 +110,5 @@
   </div>
 </div>
 
-<div class="footer">QWA Forum &copy; 2025 | Админ-панель</div>
+<div class="footer">QWA Forum | Админка</div>
 </body></html>
