@@ -2,50 +2,22 @@
 <html lang="ru"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>/<%= board.slug %>/ -- <%= board.name %> -- QWA</title>
+  <meta name="description" content="QWA Forum -- форум для обсуждений">
+  <title>QWA Forum</title>
   <link rel="stylesheet" href="/style.css">
-  <style>
-    .loading-overlay {
-      display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-      background:rgba(0,0,0,0.85);z-index:9999;
-      justify-content:center;align-items:center;flex-direction:column;
-    }
-    .loading-overlay.active { display:flex; }
-    .spinner {
-      width:50px;height:50px;border:4px solid #333;border-top:4px solid #fff;
-      border-radius:50%;animation:spin 0.8s linear infinite;
-    }
-    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-    .loading-text{color:#fff;font-family:monospace;font-size:16px;margin-top:20px;}
-    .loading-dots::after{content:'';animation:dots 1.5s infinite;}
-    @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
-  </style>
-  <script>
-    function tf(){document.getElementById('pf').classList.toggle('visible');}
-    function showLoading(t){
-      var o=document.getElementById('loadingOverlay');
-      o.querySelector('.loading-text').innerHTML=t+'<span class="loading-dots"></span>';
-      o.classList.add('active');
-    }
-  </script>
 </head><body>
-
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loading-text"><span class="loading-dots"></span></div>
-</div>
 
 <div class="topbar">
   <div class="topbar-left">
-    <a href="/">Главная</a>
+    <a href="/" class="active">Главная</a>
     <% boards.forEach(b => { %>
-      <a href="/<%= b.slug %>/"<% if(b.slug===board.slug){%> class="active"<%}%>>/<%= b.slug %>/</a>
+      <a href="/<%= b.slug %>/">/<%= b.slug %>/</a>
     <% }); %>
   </div>
   <div class="topbar-right">
-    <% if(currentUser){ %>
+    <% if (currentUser) { %>
       <a href="/profile"><%= currentUser.username %></a>
-      <%if(currentUser.role==='admin'){%><a href="/admin">[A]</a><%}%>
+      <% if(currentUser.role==='admin'){ %><a href="/admin">[A]</a><% } %>
       <a href="/logout">Выйти</a>
     <% } else { %>
       <a href="/login">Войти</a>
@@ -54,77 +26,84 @@
   </div>
 </div>
 
-<div class="breadcrumbs">
-  <a href="/">QWA</a><span>></span>
-  <strong>/<%= board.slug %>/ -- <%= board.name %></strong>
+<div class="header">
+  <h1>QWA</h1>
+  <div class="tagline">Форум для людей</div>
 </div>
 
 <div class="container">
-  <% if(currentUser && (!board.admin_only || currentUser.role==='admin')){ %>
-  <div class="form-section">
-    <button class="form-toggle" onclick="tf()">+ Создать тему</button>
-    <div class="form-body" id="pf">
-      <form action="/<%= board.slug %>/post" method="POST" enctype="multipart/form-data" onsubmit="showLoading('Создаём тему')">
-        <div class="form-row"><div class="form-label">Тема</div>
-          <div class="form-input"><input type="text" name="subject" placeholder="Заголовок темы" maxlength="100"></div></div>
-        <div class="form-row"><div class="form-label">Сообщение</div>
-          <div class="form-input"><textarea name="message" placeholder="Текст сообщения..." maxlength="10000" required></textarea></div></div>
-        <div class="form-row"><div class="form-label">Файл</div>
-          <div class="form-input"><input type="file" name="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.pdf,.zip,.rar,.txt">
-            <div class="form-hint">Макс. 5МБ</div></div></div>
-        <div class="form-row"><div class="form-label"></div>
-          <div class="form-input"><button type="submit" class="form-submit">Отправить</button></div></div>
-      </form>
+
+  <form action="/search" method="GET" class="search-bar">
+    <input type="text" name="q" placeholder="Поиск по темам..." maxlength="100">
+    <button type="submit">Найти</button>
+  </form>
+
+  <div class="stats-bar">
+    <div class="stat-item">Тем: <span class="stat-num"><%= stats.total_threads %></span></div>
+    <div class="stat-item">Постов: <span class="stat-num"><%= stats.total_posts %></span></div>
+    <div class="stat-item">Пользователей: <span class="stat-num"><%= stats.total_users %></span></div>
+  </div>
+
+  <div class="two-columns">
+    <div class="main-col">
+      <div class="section-box">
+        <div class="section-header">Разделы форума</div>
+        <table class="forum-table">
+          <thead><tr>
+            <th class="col-board">Раздел</th>
+            <th class="col-stats">Тем</th>
+            <th class="col-stats">Постов</th>
+          </tr></thead>
+          <tbody>
+            <% boards.forEach(b => { %>
+            <tr>
+              <td>
+                <div class="board-name">
+                  <a href="/<%= b.slug %>/"><%= b.name %></a>
+                  <span class="board-slug">/<%= b.slug %>/</span>
+                  <% if(b.admin_only){ %><span class="locked-tag">АДМИН</span><% } %>
+                </div>
+                <div class="board-desc"><%= b.description %></div>
+              </td>
+              <td class="col-stats"><%= b.tc %></td>
+              <td class="col-stats"><%= b.pc %></td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
-  <% } else if(!currentUser){ %>
-    <div class="section-box"><div style="padding:12px;text-align:center;">
-      <a href="/login?redirect=/<%= board.slug %>/">Войдите</a> чтобы создавать темы.
-    </div></div>
-  <% } %>
 
-  <div class="section-box">
-    <div class="section-header">/<%= board.slug %>/ -- <%= board.name %></div>
-    <% if(!threads.length){ %>
-      <div class="empty-state">Тем пока нет. Будьте первым!</div>
-    <% } else { %>
-    <table class="thread-table">
-      <thead><tr>
-        <th style="width:50%">Тема</th>
-        <th class="col-author">Автор</th>
-        <th class="col-replies">Ответы</th>
-        <th class="col-date">Последний</th>
-      </tr></thead>
-      <tbody>
-        <% threads.forEach(t => { %>
-        <tr>
-          <td>
-            <div class="thread-subject">
-              <% if(t.is_pinned){%><span class="pinned-tag">ЗАКРЕП</span><%}%>
-              <% if(t.is_locked){%><span class="locked-tag">ЗАКРЫТ</span><%}%>
-              <a href="/<%= board.slug %>/thread/<%= t.id %>"><%= t.subject || 'Без темы #'+t.id %></a>
+    <div class="side-col">
+      <div class="section-box">
+        <div class="section-header">Последние сообщения</div>
+        <div class="recent-posts">
+          <% if(recent && recent.length) { recent.forEach(p => { %>
+            <div class="recent-item">
+              <div class="recent-author"><strong><%= p.author_name %></strong></div>
+              <div class="recent-text"><%= (p.message||'').substring(0,80) %><%= (p.message||'').length>80?'...':'' %></div>
+              <div class="recent-meta">
+                в <a href="/<%= p.board_slug %>/thread/<%= p.thread_id %>#p<%= p.id %>"><%= p.thread_subject || 'теме' %></a>
+                -- <%= formatDate(p.created_at) %>
+              </div>
             </div>
-            <div class="thread-preview"><%= t.message.substring(0,150) %><%= t.message.length>150?'...':'' %></div>
-          </td>
-          <td class="col-author">
-            <strong><a href="/user/<%= t.author_name %>"><%= t.author_name %></a></strong>
-            <div class="thread-meta"><%= formatDate(t.created_at) %></div>
-          </td>
-          <td class="col-replies"><%= t.reply_count %></td>
-          <td class="col-date"><%= formatDate(t.bumped_at) %></td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-    <% } %>
-  </div>
+          <% }); } else { %>
+            <div class="recent-item" style="color:#999;">Пока ничего нет</div>
+          <% } %>
+        </div>
+      </div>
 
-  <div class="page-nav">
-    <div><a href="/">< Главная</a></div>
-    <div>Тем: <strong><%= threads.length %></strong></div>
-    <div><a href="#" onclick="window.scrollTo(0,0);return false;">Наверх ^</a></div>
+      <% if (!currentUser) { %>
+      <div class="section-box">
+        <div class="section-header">Присоединяйтесь</div>
+        <div style="padding:12px;font-size:13px;line-height:1.6;">
+          <a href="/register" style="font-weight:bold;">Зарегистрируйтесь</a> чтобы создавать темы и отвечать.
+        </div>
+      </div>
+      <% } %>
+    </div>
   </div>
 </div>
 
-<div class="footer">QWA Forum &copy; 2025 | /<%= board.slug %>/</div>
+<div class="footer">QWA Forum &copy; 2025</div>
 </body></html>
