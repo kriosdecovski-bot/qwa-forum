@@ -7,35 +7,63 @@
 </head><body>
 
 <div class="topbar">
-  <div class="topbar-left"><a href="/">Главная</a>
-    <% boards.forEach(b => { %><a href="/<%= b.slug %>/">/<%= b.slug %>/</a><% }); %>
-  </div>
+  <div class="topbar-left"><a href="/" class="topbar-logo">QWA</a></div>
   <div class="topbar-right">
-    <% if(currentUser){ %><a href="/profile"><%= currentUser.username %></a><a href="/logout">Выйти</a>
-    <% } else { %><a href="/login">Войти</a><% } %>
+    <% if(currentUser){ %>
+      <a href="/messages" class="top-btn top-btn-dark">Сообщения</a>
+      <a href="/profile" class="top-btn top-btn-outline"><%= currentUser.username %></a>
+      <a href="/logout" class="top-btn top-btn-ghost">Выйти</a>
+    <% } else { %>
+      <a href="/login" class="top-btn top-btn-dark">Войти</a>
+    <% } %>
   </div>
 </div>
 
-<div class="container" style="max-width:500px;margin-top:30px;">
+<div class="container" style="max-width:550px;margin-top:30px;">
   <div class="section-box">
-    <div class="section-header">Профиль: <%= user.username %></div>
-    <div style="padding:15px;">
-      <table style="width:100%;font-size:13px;">
-        <tr><td style="padding:8px;color:#888;width:40%;">Имя:</td><td style="padding:8px;font-weight:bold;"><%= user.username %></td></tr>
-        <tr><td style="padding:8px;color:#888;">Роль:</td><td style="padding:8px;">
-          <% if(user.role==='admin'){ %><span class="pinned-tag">АДМИН</span>
-          <% } else if(user.role==='mod'){ %><span class="locked-tag">МОДЕРАТОР</span>
-          <% } else { %>Пользователь<% } %>
-        </td></tr>
-        <tr><td style="padding:8px;color:#888;">Сообщений:</td><td style="padding:8px;"><%= user.post_count || 0 %></td></tr>
-        <tr><td style="padding:8px;color:#888;">Регистрация:</td><td style="padding:8px;"><%= fdate(user.created_at) %></td></tr>
-        <% if(user.about){ %>
-        <tr><td style="padding:8px;color:#888;">О себе:</td><td style="padding:8px;"><%= user.about %></td></tr>
+    <div class="section-header">Профиль</div>
+    <div style="padding:25px;">
+
+      <!-- Аватарка и имя -->
+      <div style="text-align:center;margin-bottom:20px;">
+        <% if(user.avatar){ %>
+          <img src="/uploads/<%= user.avatar %>" class="user-avatar-big">
+        <% } else { %>
+          <div class="avatar-default-big"><%= user.username.charAt(0).toUpperCase() %></div>
         <% } %>
-      </table>
+        <div style="margin-top:8px;">
+          <strong style="font-size:18px;"><%= user.username %></strong>
+          <%- getRolePrefix(user.role) %>
+        </div>
+      </div>
+
+      <div class="profile-info">
+        <div class="profile-row">
+          <span class="profile-label">Сообщений</span>
+          <span><%= user.post_count || 0 %></span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-label">Регистрация</span>
+          <span><%= formatDate(user.created_at) %></span>
+        </div>
+        <% if(user.about){ %>
+        <div class="profile-row">
+          <span class="profile-label">О себе</span>
+          <span><%= user.about %></span>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- Кнопка написать в ЛС -->
+      <% if(currentUser && currentUser.id !== user.id){ %>
+        <div style="margin-top:20px;text-align:center;">
+          <a href="/messages/chat/<%= user.username %>" class="big-btn">Написать сообщение</a>
+        </div>
+      <% } %>
+
     </div>
   </div>
 </div>
 
-<div class="footer">QWA Forum &copy; 2025</div>
+<div class="footer">QWA Forum</div>
 </body></html>

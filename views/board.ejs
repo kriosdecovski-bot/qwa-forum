@@ -1,118 +1,98 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="ru"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>/<%= board.slug %>/ -- <%= board.name %> -- QWA</title>
+  <title><%= board.name %> -- QWA</title>
   <link rel="stylesheet" href="/style.css">
+  <style>
+    .loading-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;flex-direction:column;}
+    .loading-overlay.active{display:flex;}
+    .spinner{width:50px;height:50px;border:4px solid #333;border-top:4px solid #fff;border-radius:50%;animation:spin 0.8s linear infinite;}
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    .loading-text{color:#fff;font-family:monospace;font-size:16px;margin-top:20px;}
+  </style>
   <script>
-    function toggleForm(){document.getElementById('pf').classList.toggle('visible');}
+    function tf(){document.getElementById('pf').classList.toggle('visible');}
+    function showLoading(t){var o=document.getElementById('lo');o.querySelector('.loading-text').textContent=t+'...';o.classList.add('active');}
   </script>
 </head><body>
 
+<div class="loading-overlay" id="lo"><div class="spinner"></div><div class="loading-text"></div></div>
+
 <div class="topbar">
-  <div class="topbar-left">
-    <a href="/">Glavnaya</a>
-    <% boards.forEach(function(b) { %>
-      <a href="/<%= b.slug %>/"<% if(b.slug===board.slug){%> class="active"<%}%>>/<%= b.slug %>/</a>
-    <% }); %>
-  </div>
+  <div class="topbar-left"><a href="/" class="topbar-logo">QWA</a></div>
   <div class="topbar-right">
-    <% if (currentUser) { %>
-      <a href="/profile" style="color:#aaa;border:none;"><%= currentUser.username %></a>
-      <% if(currentUser.role==='admin'){ %><a href="/admin" style="color:#fff;border:none;margin-left:5px;">[A]</a><% } %>
-      <a href="/logout" style="color:#888;border:none;margin-left:8px;">vyyti</a>
+    <% if(currentUser){ %>
+      <% if(['owner','coowner','admin'].includes(currentUser.role)){ %><a href="/admin" class="top-btn top-btn-dark">Админка</a><% } %>
+      <a href="/messages" class="top-btn top-btn-dark">ЛС</a>
+      <a href="/profile" class="top-btn top-btn-outline"><%= currentUser.username %></a>
+      <a href="/logout" class="top-btn top-btn-ghost">Выйти</a>
     <% } else { %>
-      <a href="/login" style="color:#aaa;border:none;">voyti</a>
-      <a href="/register" style="color:#aaa;border:none;margin-left:8px;">registraciya</a>
+      <a href="/login" class="top-btn top-btn-dark">Войти</a>
+      <a href="/register" class="top-btn top-btn-outline">Регистрация</a>
     <% } %>
   </div>
 </div>
 
 <div class="breadcrumbs">
-  <a href="/">QWA</a><span>></span><strong>/<%= board.slug %>/ -- <%= board.name %></strong>
+  <a href="/">Главная</a><span>></span>
+  <strong><%= board.name %></strong>
 </div>
 
 <div class="container">
-
-  <% if (currentUser && (!board.admin_only || currentUser.role==='admin')) { %>
+  <% if(currentUser && (!board.admin_only || isStaff(currentUser.role))){ %>
   <div class="form-section">
-    <button class="form-toggle" onclick="toggleForm()">+ Sozdat temu</button>
+    <button class="form-toggle" onclick="tf()">+ Создать тему</button>
     <div class="form-body" id="pf">
-      <form action="/<%= board.slug %>/post" method="POST" enctype="multipart/form-data">
-        <div class="form-row">
-          <div class="form-label">Tema</div>
-          <div class="form-input"><input type="text" name="subject" placeholder="Zagolovok" maxlength="100"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-label">Soobshenie</div>
-          <div class="form-input">
-            <textarea name="message" placeholder="Tekst..." maxlength="10000" required></textarea>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-label">Fayl</div>
-          <div class="form-input">
-            <input type="file" name="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.pdf,.zip,.rar,.7z,.txt">
-            <div class="form-hint">Max 5MB. JPG, PNG, GIF, WEBP, MP4, PDF, ZIP, RAR, TXT</div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-label"></div>
-          <div class="form-input"><button type="submit" class="form-submit">Otpravit</button></div>
-        </div>
+      <form action="/<%= board.slug %>/post" method="POST" enctype="multipart/form-data" onsubmit="showLoading('Создаём тему')">
+        <div class="form-row"><div class="form-label">Тема</div>
+          <div class="form-input"><input type="text" name="subject" placeholder="Заголовок" maxlength="100"></div></div>
+        <div class="form-row"><div class="form-label">Сообщение</div>
+          <div class="form-input"><textarea name="message" placeholder="Текст..." maxlength="10000" required></textarea></div></div>
+        <div class="form-row"><div class="form-label">Файл</div>
+          <div class="form-input"><input type="file" name="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.pdf,.zip,.rar,.txt">
+            <div class="form-hint">Макс. 5МБ</div></div></div>
+        <div class="form-row"><div class="form-label"></div>
+          <div class="form-input"><button type="submit" class="form-submit">Отправить</button></div></div>
       </form>
     </div>
   </div>
-  <% } else if (!currentUser) { %>
-  <div class="section-box">
-    <div style="padding:12px;text-align:center;font-size:13px;">
-      <a href="/login?redirect=/<%= board.slug %>/">Voydite</a> chtoby sozdavat temy.
-    </div>
-  </div>
+  <% } else if(!currentUser){ %>
+    <div class="section-box"><div style="padding:15px;text-align:center;"><a href="/login?redirect=/<%= board.slug %>/" class="big-btn">Войти чтобы создать тему</a></div></div>
   <% } %>
 
   <div class="section-box">
-    <div class="section-header">/<%= board.slug %>/ -- <%= board.name %></div>
-    <% if(!threads.length){ %>
-      <div class="empty-state">Tem poka net.</div>
+    <div class="section-header"><%= board.name %></div>
+    <% if(!threads.length){ %><div class="empty-state">Тем пока нет. Будьте первым!</div>
     <% } else { %>
-    <table class="thread-table">
-      <thead><tr>
-        <th style="width:50%">Tema</th>
-        <th class="col-author">Avtor</th>
-        <th class="col-replies">Otvety</th>
-        <th class="col-date">Posledniy</th>
-      </tr></thead>
-      <tbody>
-        <% threads.forEach(function(t){ %>
-        <tr>
-          <td>
-            <div class="thread-subject">
-              <% if(t.is_pinned){%><span class="pinned-tag">PIN</span><%}%>
-              <% if(t.is_locked){%><span class="locked-tag">LOCK</span><%}%>
-              <a href="/<%= board.slug %>/thread/<%= t.id %>"><%= t.subject || 'Bez temy #'+t.id %></a>
-            </div>
-            <div class="thread-preview"><%= t.message.substring(0,150) %><%= t.message.length>150?'...':'' %></div>
-          </td>
-          <td class="col-author">
-            <strong><%= t.author_name %></strong>
-            <div class="thread-meta"><%= formatDate(t.created_at) %></div>
-          </td>
-          <td class="col-replies"><%= t.reply_count %></td>
-          <td class="col-date"><%= formatDate(t.bumped_at) %></td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
+    <div class="thread-list">
+      <% threads.forEach(t => { %>
+      <a href="/<%= board.slug %>/thread/<%= t.id %>" class="thread-card">
+        <div class="thread-card-top">
+          <div class="thread-card-title">
+            <% if(t.is_pinned){%><span class="pinned-tag">ЗАКРЕП</span><%}%>
+            <% if(t.is_locked){%><span class="locked-tag">ЗАКРЫТ</span><%}%>
+            <%= t.subject || 'Без темы #'+t.id %>
+          </div>
+          <div class="thread-card-replies"><%= t.reply_count %> ответов</div>
+        </div>
+        <div class="thread-card-preview"><%= t.message.substring(0,150) %><%= t.message.length>150?'...':'' %></div>
+        <div class="thread-card-meta">
+          <span><%= t.author_name %></span>
+          <span><%= formatDate(t.bumped_at) %></span>
+        </div>
+      </a>
+      <% }); %>
+    </div>
     <% } %>
   </div>
 
   <div class="page-nav">
-    <div><a href="/">< Glavnaya</a></div>
-    <div>Tem: <strong><%= threads.length %></strong></div>
-    <div><a href="#" onclick="window.scrollTo(0,0);return false;">Naverh ^</a></div>
+    <div><a href="/">< Главная</a></div>
+    <div>Тем: <strong><%= threads.length %></strong></div>
+    <div><a href="#" onclick="window.scrollTo(0,0);return false;">Наверх</a></div>
   </div>
 </div>
 
-<div class="footer">QWA Forum &copy; 2025 | /<%= board.slug %>/</div>
+<div class="footer">QWA Forum</div>
 </body></html>

@@ -1,42 +1,77 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="ru"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profil -- QWA</title>
+  <title>Мой профиль -- QWA</title>
   <link rel="stylesheet" href="/style.css">
 </head><body>
 
 <div class="topbar">
-  <div class="topbar-left"><a href="/">QWA</a></div>
+  <div class="topbar-left"><a href="/" class="topbar-logo">QWA</a></div>
   <div class="topbar-right">
-    <span style="color:#aaa;"><%= currentUser.username %></span>
-    <a href="/logout" style="color:#aaa;border:none;margin-left:10px;">Vyyti</a>
+    <% if(['owner','coowner'].includes(currentUser.role)){ %><a href="/owner" class="top-btn top-btn-red">Owner Panel</a><% } %>
+    <% if(['owner','coowner','admin'].includes(currentUser.role)){ %><a href="/admin" class="top-btn top-btn-dark">Админка</a><% } %>
+    <a href="/messages" class="top-btn top-btn-dark">Сообщения<% if(unread>0){ %> <span class="msg-badge"><%= unread %></span><% } %></a>
+    <a href="/logout" class="top-btn top-btn-ghost">Выйти</a>
   </div>
 </div>
 
-<div class="container" style="max-width:500px;margin-top:30px;">
+<div class="container" style="max-width:550px;margin-top:30px;">
   <div class="section-box">
-    <div class="section-header">Profil</div>
-    <div style="padding:20px;">
-      <table style="width:100%;font-size:13px;">
-        <tr><td style="padding:8px;color:#888;width:40%;">Imya:</td><td style="padding:8px;font-weight:bold;"><%= user.username %></td></tr>
-        <tr><td style="padding:8px;color:#888;">Email:</td><td style="padding:8px;"><%= user.email %></td></tr>
-        <tr><td style="padding:8px;color:#888;">Rol:</td><td style="padding:8px;">
-          <% if(user.role==='admin'){ %><span style="background:#222;color:#fff;padding:2px 8px;font-size:11px;font-weight:bold;">ADMIN</span>
-          <% } else if(user.role==='mod'){ %><span style="background:#666;color:#fff;padding:2px 8px;font-size:11px;">MOD</span>
-          <% } else { %><span style="color:#888;">User</span><% } %>
-        </td></tr>
-        <tr><td style="padding:8px;color:#888;">Registraciya:</td><td style="padding:8px;"><%= formatDate(user.created_at) %></td></tr>
-        <tr><td style="padding:8px;color:#888;">Email podtverzhden:</td><td style="padding:8px;"><%= user.email_verified ? 'Da' : 'Net' %></td></tr>
-      </table>
+    <div class="section-header">Мой профиль</div>
+    <div style="padding:25px;">
 
-      <% if (user.role === 'admin') { %>
-        <div style="margin-top:15px;text-align:center;">
-          <a href="/admin" style="background:#222;color:#fff;padding:8px 20px;border:none;font-weight:bold;font-size:13px;">Admin panel</a>
+      <!-- Аватарка -->
+      <div style="text-align:center;margin-bottom:20px;">
+        <% if(user.avatar){ %>
+          <img src="/uploads/<%= user.avatar %>" class="user-avatar-big">
+        <% } else { %>
+          <div class="avatar-default-big"><%= user.username.charAt(0).toUpperCase() %></div>
+        <% } %>
+        <div style="margin-top:8px;">
+          <strong style="font-size:18px;"><%= user.username %></strong>
+          <%- getRolePrefix(user.role) %>
         </div>
-      <% } %>
+      </div>
+
+      <div class="profile-info">
+        <div class="profile-row">
+          <span class="profile-label">Email</span>
+          <span><%= user.email %></span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-label">Сообщений</span>
+          <span><%= user.post_count || 0 %></span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-label">Регистрация</span>
+          <span><%= formatDate(user.created_at) %></span>
+        </div>
+      </div>
+
+      <!-- Форма редактирования -->
+      <form method="POST" action="/profile/update" enctype="multipart/form-data" style="margin-top:20px;">
+        <div class="form-row-stack">
+          <label>Аватарка</label>
+          <div class="avatar-upload">
+            <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.gif,.webp" id="avatarInput">
+            <label for="avatarInput" class="avatar-upload-btn">Выбрать фото</label>
+            <span class="avatar-upload-hint">JPG, PNG или GIF. Макс. 5МБ</span>
+          </div>
+        </div>
+
+        <div class="form-row-stack">
+          <label>О себе</label>
+          <textarea name="about" maxlength="500" placeholder="Расскажите о себе..."
+            style="width:100%;height:80px;padding:10px;border:1px solid #ddd;font-family:inherit;font-size:13px;resize:vertical;border-radius:4px;"><%= user.about || '' %></textarea>
+        </div>
+
+        <button type="submit" class="big-btn" style="width:100%;">Сохранить</button>
+      </form>
+
     </div>
   </div>
 </div>
 
+<div class="footer">QWA Forum</div>
 </body></html>

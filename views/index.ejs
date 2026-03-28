@@ -2,26 +2,28 @@
 <html lang="ru"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="QWA Forum -- форум для обсуждений">
   <title>QWA Forum</title>
   <link rel="stylesheet" href="/style.css">
 </head><body>
 
 <div class="topbar">
   <div class="topbar-left">
-    <a href="/" class="active">Главная</a>
-    <% boards.forEach(b => { %>
-      <a href="/<%= b.slug %>/">/<%= b.slug %>/</a>
-    <% }); %>
+    <a href="/" class="topbar-logo">QWA</a>
   </div>
   <div class="topbar-right">
     <% if (currentUser) { %>
-      <a href="/profile"><%= currentUser.username %></a>
-      <% if(currentUser.role==='admin'){ %><a href="/admin">[A]</a><% } %>
-      <a href="/logout">Выйти</a>
+      <% if(['owner','coowner'].includes(currentUser.role)){ %>
+        <a href="/owner" class="top-btn top-btn-red">Owner Panel</a>
+      <% } %>
+      <% if(['owner','coowner','admin'].includes(currentUser.role)){ %>
+        <a href="/admin" class="top-btn top-btn-dark">Админка</a>
+      <% } %>
+      <a href="/messages" class="top-btn top-btn-dark">Сообщения<% if(typeof unread!=='undefined' && unread>0){ %> <span class="msg-badge"><%= unread %></span><% } %></a>
+      <a href="/profile" class="top-btn top-btn-outline"><%= currentUser.username %></a>
+      <a href="/logout" class="top-btn top-btn-ghost">Выйти</a>
     <% } else { %>
-      <a href="/login">Войти</a>
-      <a href="/register">Регистрация</a>
+      <a href="/login" class="top-btn top-btn-dark">Войти</a>
+      <a href="/register" class="top-btn top-btn-outline">Регистрация</a>
     <% } %>
   </div>
 </div>
@@ -44,34 +46,29 @@
     <div class="stat-item">Пользователей: <span class="stat-num"><%= stats.total_users %></span></div>
   </div>
 
+  <!-- Кнопки разделов -->
+  <div class="board-buttons">
+    <% boards.forEach(b => { %>
+      <a href="/<%= b.slug %>/" class="board-btn">
+        <div class="board-btn-name"><%= b.name %></div>
+        <div class="board-btn-desc"><%= b.description %></div>
+        <div class="board-btn-stats"><%= b.tc %> тем / <%= b.pc %> постов</div>
+        <% if(b.admin_only){ %><span class="board-btn-badge">Админ</span><% } %>
+      </a>
+    <% }); %>
+  </div>
+
   <div class="two-columns">
     <div class="main-col">
+      <% if (!currentUser) { %>
       <div class="section-box">
-        <div class="section-header">Разделы форума</div>
-        <table class="forum-table">
-          <thead><tr>
-            <th class="col-board">Раздел</th>
-            <th class="col-stats">Тем</th>
-            <th class="col-stats">Постов</th>
-          </tr></thead>
-          <tbody>
-            <% boards.forEach(b => { %>
-            <tr>
-              <td>
-                <div class="board-name">
-                  <a href="/<%= b.slug %>/"><%= b.name %></a>
-                  <span class="board-slug">/<%= b.slug %>/</span>
-                  <% if(b.admin_only){ %><span class="locked-tag">АДМИН</span><% } %>
-                </div>
-                <div class="board-desc"><%= b.description %></div>
-              </td>
-              <td class="col-stats"><%= b.tc %></td>
-              <td class="col-stats"><%= b.pc %></td>
-            </tr>
-            <% }); %>
-          </tbody>
-        </table>
+        <div class="section-header">Присоединяйтесь</div>
+        <div style="padding:20px;text-align:center;font-size:14px;line-height:1.8;">
+          <a href="/register" class="big-btn">Зарегистрироваться</a>
+          <p style="margin-top:10px;color:#888;">Уже есть аккаунт? <a href="/login">Войти</a></p>
+        </div>
       </div>
+      <% } %>
     </div>
 
     <div class="side-col">
@@ -92,15 +89,6 @@
           <% } %>
         </div>
       </div>
-
-      <% if (!currentUser) { %>
-      <div class="section-box">
-        <div class="section-header">Присоединяйтесь</div>
-        <div style="padding:12px;font-size:13px;line-height:1.6;">
-          <a href="/register" style="font-weight:bold;">Зарегистрируйтесь</a> чтобы создавать темы и отвечать.
-        </div>
-      </div>
-      <% } %>
     </div>
   </div>
 </div>
