@@ -8,14 +8,12 @@ let db;
 
 async function initDB() {
   const SQL = await initSqlJs();
-
   if (fs.existsSync(DB_PATH)) {
     db = new SQL.Database(fs.readFileSync(DB_PATH));
   } else {
     db = new SQL.Database();
   }
 
-  // === TABLICY ===
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -67,21 +65,20 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // === DEFAULT BOARDS ===
   const r = db.exec("SELECT COUNT(*) FROM boards");
   const count = r[0] ? r[0].values[0][0] : 0;
 
   if (count === 0) {
     const boards = [
-      ['general',  'Obshiy',       'Razgovory na lyubye temy',                 0, 1],
-      ['roblox',   'Roblox',       'Obsuzhdeniye igr v Roblox',                0, 2],
-      ['games',    'Igry',         'PC, konsoli, mobilnye igry',               0, 3],
-      ['politics', 'Politika',     'Politika i obshchestvo',                   0, 4],
-      ['tech',     'Tekhnologii',  'Programmirovanie, zhelezo, soft',          0, 5],
-      ['music',    'Muzyka',       'Muzyka vsekh zhanrov',                     0, 6],
-      ['anime',    'Anime',        'Anime, manga, ranobe',                     0, 7],
-      ['random',   'Random',       'Obo vsem i ni o chem',                     0, 8],
-      ['news',     'Novosti QWA',  'Oficialnye novosti foruma. Tolko adminy', 1, 0]
+      ['general',  'Общий',        'Разговоры на любые темы',                    0, 1],
+      ['roblox',   'Roblox',       'Обсуждение игр в Roblox',                    0, 2],
+      ['games',    'Игры',         'ПК, консоли, мобильные игры',                0, 3],
+      ['politics', 'Политика',     'Политика и общество',                        0, 4],
+      ['tech',     'Технологии',   'Программирование, железо, софт',             0, 5],
+      ['music',    'Музыка',       'Музыка всех жанров',                         0, 6],
+      ['anime',    'Anime',        'Аниме, манга, ранобэ',                       0, 7],
+      ['random',   'Random',       'Обо всём и ни о чём',                        0, 8],
+      ['news',     'Новости QWA',  'Официальные новости форума (только админы)', 1, 0]
     ];
     for (const b of boards) {
       db.run("INSERT INTO boards (slug,name,description,admin_only,sort_order) VALUES(?,?,?,?,?)", b);
@@ -89,7 +86,6 @@ async function initDB() {
     save();
   }
 
-  // === CREATE ADMIN ===
   const adminCheck = db.exec("SELECT COUNT(*) FROM users WHERE role='admin'");
   const adminCount = adminCheck[0] ? adminCheck[0].values[0][0] : 0;
 
@@ -127,7 +123,6 @@ function val(r, def) {
 
 function buildQueries() {
   return {
-    // --- Users ---
     createUser: (username, email, hash) => {
       db.run("INSERT INTO users (username,email,password_hash) VALUES(?,?,?)", [username, email, hash]);
       save();
@@ -140,7 +135,6 @@ function buildQueries() {
     setUserRole: (id, role) => { db.run("UPDATE users SET role=? WHERE id=?", [role, id]); save(); },
     getAllUsers: () => rows(db.exec("SELECT id,username,email,role,email_verified,created_at FROM users ORDER BY id")),
 
-    // --- Verify codes ---
     saveVerifyCode: (email, code) => {
       db.run("DELETE FROM verify_codes WHERE email=?", [email]);
       db.run("INSERT INTO verify_codes (email,code) VALUES(?,?)", [email, code]);
@@ -149,11 +143,9 @@ function buildQueries() {
     getVerifyCode: (email) => rows(db.exec("SELECT * FROM verify_codes WHERE email=? ORDER BY id DESC LIMIT 1", [email]))[0] || null,
     deleteVerifyCode: (email) => { db.run("DELETE FROM verify_codes WHERE email=?", [email]); save(); },
 
-    // --- Boards ---
     getAllBoards: () => rows(db.exec("SELECT * FROM boards ORDER BY sort_order, id")),
     getBoard: (slug) => rows(db.exec("SELECT * FROM boards WHERE slug=?", [slug]))[0] || null,
 
-    // --- Threads ---
     getThreadsByBoard: (slug) => rows(db.exec(`
       SELECT t.*, (SELECT COUNT(*) FROM posts WHERE thread_id=t.id) as reply_count
       FROM threads t WHERE board_slug=?
@@ -176,7 +168,6 @@ function buildQueries() {
     pinThread: (id, pin) => { db.run("UPDATE threads SET is_pinned=? WHERE id=?", [pin, id]); save(); },
     lockThread: (id, lock) => { db.run("UPDATE threads SET is_locked=? WHERE id=?", [lock, id]); save(); },
 
-    // --- Posts ---
     getPostsByThread: (tid) => rows(db.exec("SELECT * FROM posts WHERE thread_id=? ORDER BY created_at", [tid])),
     createPost: (tid, slug, authorName, authorId, message, imagePath) => {
       db.run(
@@ -189,7 +180,6 @@ function buildQueries() {
     deletePost: (id) => { db.run("DELETE FROM posts WHERE id=?", [id]); save(); },
     bumpThread: (id) => { db.run("UPDATE threads SET bumped_at=CURRENT_TIMESTAMP WHERE id=?", [id]); save(); },
 
-    // --- Stats ---
     getThreadCount: (slug) => ({ cnt: val(db.exec("SELECT COUNT(*) FROM threads WHERE board_slug=?", [slug]), 0) }),
     getPostCount: (slug) => ({ cnt: val(db.exec("SELECT COUNT(*) FROM posts WHERE board_slug=?", [slug]), 0) }),
     getTotalStats: () => ({
