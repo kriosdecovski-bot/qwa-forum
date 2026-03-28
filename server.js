@@ -5,7 +5,7 @@ const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
-const { initDB, buildQueries } = require('./db');
+const { initDB, buildQueries } = require('./db-postgres');
 const { sendVerificationCode, sendReplyNotification } = require('./mail');
 const { requireAuth, requireAdmin, addUserToViews } = require('./middleware');
 
