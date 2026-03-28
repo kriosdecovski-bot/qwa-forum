@@ -7,110 +7,128 @@
   <link rel="stylesheet" href="/style.css">
   <script>
     function toggleForm() {
-      var f = document.getElementById('postform-wrap');
-      f.style.display = (f.style.display === 'none') ? 'block' : 'none';
+      var f = document.getElementById('post-form-body');
+      f.classList.toggle('visible');
     }
   </script>
 </head>
 <body>
 
-<div class="nav-bar">
-  [ <a href="/">Home</a> ]
-  <% boards.forEach(function(b) { %>
-    / <a href="/<%= b.slug %>/"<% if(b.slug===board.slug){ %> style="color:#FFF;font-weight:bold"<% } %>><%= b.slug %></a>
-  <% }); %>
-  /
-</div>
-
-<div class="board-title">
-  <h1>/<%= board.slug %>/ -- <%= board.name %></h1>
-  <div class="board-desc"><%= board.description %></div>
-</div>
-
-<!-- POST FORM -->
-<div class="postform-container">
-  <button class="toggle-form-btn" onclick="toggleForm()">[Start a New Thread]</button>
-
-  <div id="postform-wrap" style="display:none; margin-top:10px;">
-    <form action="/<%= board.slug %>/post" method="POST" class="postform">
-      <table>
-        <tr>
-          <td class="field-label">Name</td>
-          <td><input type="text" name="name" placeholder="Anonymous" maxlength="50"></td>
-        </tr>
-        <tr>
-          <td class="field-label">Subject</td>
-          <td>
-            <input type="text" name="subject" placeholder="Subject" maxlength="100">
-            <input type="submit" value="Post">
-          </td>
-        </tr>
-        <tr>
-          <td class="field-label">Message</td>
-          <td><textarea name="message" placeholder="Type your message here..." maxlength="5000" required></textarea></td>
-        </tr>
-      </table>
-    </form>
-    <div class="rules-text">
-      Supported: &gt;greentext, &gt;&gt;123 (post links). Name#secret for tripcode. "sage" in name = no bump.
-    </div>
-  </div>
-</div>
-
-<hr class="separator">
-
-<!-- THREAD LISTING -->
-<% if (threads.length === 0) { %>
-  <div style="text-align:center; padding:40px; color:#AA5555;">
-    No threads yet. Be the first to post.
-  </div>
-<% } %>
-
-<% threads.forEach(function(t) { %>
-  <div class="thread-container">
-
-    <div class="op-post">
-      <div class="post-header">
-        <% if (t.subject) { %><span class="post-subject"><%= t.subject %></span> <% } %>
-        <span class="post-author"><%= t.author %></span>
-        <span class="post-date"><%= formatDate(t.created_at) %></span>
-        <span class="post-number">
-          <a href="/<%= board.slug %>/thread/<%= t.id %>" id="p<%= t.id %>">No.<%= t.id %></a>
-        </span>
-        <span class="thread-links">
-          [<a href="/<%= board.slug %>/thread/<%= t.id %>">Reply</a>]
-        </span>
-      </div>
-      <div class="post-message"><%- formatPost(t.message) %></div>
-    </div>
-
-    <% if (t.omitted > 0) { %>
-      <div class="omitted-info"><%= t.omitted %> post(s) omitted. Click Reply to view.</div>
-    <% } %>
-
-    <% t.lastPosts.forEach(function(p) { %>
-      <div class="reply-post">
-        <div class="post-header">
-          <span class="post-author"><%= p.author %></span>
-          <span class="post-date"><%= formatDate(p.created_at) %></span>
-          <span class="post-number">
-            <a href="/<%= board.slug %>/thread/<%= t.id %>#p<%= p.id %>" id="p<%= p.id %>">No.<%= p.id %></a>
-          </span>
-        </div>
-        <div class="post-message"><%- formatPost(p.message) %></div>
-      </div>
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/">Glavnaya</a>
+    <% boards.forEach(function(b) { %>
+      <a href="/<%= b.slug %>/"<% if(b.slug===board.slug){ %> class="active"<% } %>>/<%= b.slug %>/</a>
     <% }); %>
-
   </div>
-  <hr class="separator">
-<% }); %>
+  <div class="topbar-right">QWA Forum</div>
+</div>
 
-<div class="page-bottom-nav">
-  [<a href="/">Home</a>] [<a href="#" onclick="window.scrollTo(0,0);return false;">Top</a>]
+<div class="breadcrumbs">
+  <a href="/">QWA</a>
+  <span>></span>
+  <strong>/<%= board.slug %>/ -- <%= board.name %></strong>
+</div>
+
+<div class="container">
+
+  <!-- POST FORM -->
+  <div class="form-section">
+    <button class="form-toggle" onclick="toggleForm()">+ Sozdat novuyu temu</button>
+    <div class="form-body" id="post-form-body">
+      <form action="/<%= board.slug %>/post" method="POST">
+        <div class="form-row">
+          <div class="form-label">Imya</div>
+          <div class="form-input">
+            <input type="text" name="name" placeholder="Anonymous" maxlength="50">
+            <div class="form-hint">Ostavte pustym dlya anonimnogo posta. Tripcode: Imya#sekret</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Tema</div>
+          <div class="form-input">
+            <input type="text" name="subject" placeholder="Zagolovok temy" maxlength="100">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Soobshenie</div>
+          <div class="form-input">
+            <textarea name="message" placeholder="Tekst soobsheniya..." maxlength="5000" required></textarea>
+            <div class="form-hint">&gt;greentext &gt;&gt;123 ssylka na post. Maks 5000 simvolov.</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label"></div>
+          <div class="form-input">
+            <button type="submit" class="form-submit">Otpravit</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- THREAD LIST -->
+  <div class="section-box">
+    <div class="section-header">/<%= board.slug %>/ -- <%= board.name %></div>
+
+    <% if (threads.length === 0) { %>
+      <div class="empty-state">
+        Tem poka net. Budte pervym!
+      </div>
+    <% } else { %>
+      <table class="thread-table">
+        <thead>
+          <tr>
+            <th style="width:50%">Tema</th>
+            <th class="col-author">Avtor</th>
+            <th class="col-replies">Otvety</th>
+            <th class="col-date">Posledny post</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% threads.forEach(function(t) { %>
+          <tr>
+            <td>
+              <div class="thread-subject">
+                <% if (t.is_pinned) { %><span class="pinned-tag">PIN</span><% } %>
+                <% if (t.is_locked) { %><span class="locked-tag">LOCK</span><% } %>
+                <a href="/<%= board.slug %>/thread/<%= t.id %>">
+                  <%= t.subject || 'No subject #' + t.id %>
+                </a>
+              </div>
+              <div class="thread-preview">
+                <%= t.message.substring(0, 120) %><%= t.message.length > 120 ? '...' : '' %>
+              </div>
+            </td>
+            <td class="col-author">
+              <strong><%= t.author %></strong>
+              <div class="thread-meta"><%= formatDate(t.created_at) %></div>
+            </td>
+            <td class="col-replies">
+              <%= t.reply_count_live %>
+            </td>
+            <td class="col-date">
+              <%= formatDate(t.bumped_at) %>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <div class="page-nav">
+    <div><a href="/">< Glavnaya</a></div>
+    <div>
+      Vsego tem: <strong><%= threads.length %></strong>
+    </div>
+    <div><a href="#" onclick="window.scrollTo(0,0);return false;">Naverh ^</a></div>
+  </div>
+
 </div>
 
 <div class="footer">
-  QWA &copy; 2025 | /<%= board.slug %>/
+  QWA Forum &copy; 2025 | /<%= board.slug %>/ -- <%= board.name %>
 </div>
 
 </body>

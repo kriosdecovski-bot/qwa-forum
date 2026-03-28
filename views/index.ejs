@@ -3,59 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QWA -- Anonymous Forum</title>
+  <title>QWA Forum</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-<div class="nav-bar">
-  [ <a href="/">Home</a> ]
-  <% boards.forEach(function(b) { %>
-    / <a href="/<%= b.slug %>/"><%= b.slug %></a>
-  <% }); %>
-  /
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="active">Glavnaya</a>
+    <% boards.forEach(function(b) { %>
+      <a href="/<%= b.slug %>/">/<%= b.slug %>/</a>
+    <% }); %>
+  </div>
+  <div class="topbar-right">QWA Forum</div>
 </div>
 
-<div class="site-header">
-  <h1><span class="q">Q</span>WA</h1>
-  <div class="subtitle">Anonymous text forum -- no emojis, no avatars, no bullshit</div>
+<div class="header">
+  <h1>QWA</h1>
+  <div class="tagline">anonymous text forum -- est. 2025</div>
 </div>
 
-<div class="main-container">
+<div class="container">
 
-  <div class="stats-box">
-    Total threads: <%= stats.total_threads %> | Total posts: <%= stats.total_posts %>
+  <div class="stats-bar">
+    <div class="stat-item">
+      Vsego tem: <span class="stat-num"><%= stats.total_threads %></span>
+    </div>
+    <div class="stat-item">
+      Vsego postov: <span class="stat-num"><%= stats.total_posts %></span>
+    </div>
+    <div class="stat-item">
+      Razdelov: <span class="stat-num"><%= boards.length %></span>
+    </div>
   </div>
 
-  <table class="board-list-table">
-    <tr>
-      <th>Board</th>
-      <th>Description</th>
-      <th>Threads</th>
-      <th>Posts</th>
-    </tr>
-    <% boards.forEach(function(b) { %>
-    <tr>
-      <td>
-        <a href="/<%= b.slug %>/" class="board-link">/<%= b.slug %>/</a>
-        -- <%= b.name %>
-      </td>
-      <td><%= b.description %></td>
-      <td><%= b.threadCount %></td>
-      <td><%= b.postCount %></td>
-    </tr>
-    <% }); %>
-  </table>
+  <div class="section-box">
+    <div class="section-header">Razdely foruma</div>
+    <table class="forum-table">
+      <thead>
+        <tr>
+          <th class="col-board">Razdel</th>
+          <th class="col-stats">Temy</th>
+          <th class="col-stats">Posty</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% boards.forEach(function(b) { %>
+        <tr>
+          <td class="col-board">
+            <div class="board-name">
+              <a href="/<%= b.slug %>/"><%= b.name %></a>
+              <span class="board-slug">/<%= b.slug %>/</span>
+            </div>
+            <div class="board-desc"><%= b.description %></div>
+          </td>
+          <td class="col-stats"><%= b.threadCount %></td>
+          <td class="col-stats"><%= b.postCount %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
 
-  <div class="rules-text">
-    QWA Forum. Anonymity by default. Use name#secret for tripcode.<br>
-    Keep it civil or don't -- we don't care.
+  <div class="section-box">
+    <div class="section-header-light">O forume</div>
+    <div style="padding:12px 15px; font-size:12px; color:#666; line-height:1.8;">
+      QWA -- anonimnyy tekstovyy forum. Registraciya ne nuzhna.<br>
+      Pishi kak Anonymous ili ispolzuy tripcode: Imya#sekret.<br>
+      Greentext: nachinayte stroku s &gt; dlya citatirovaniya.<br>
+      Ssylki na posty: &gt;&gt;123<br>
+      Sage: vvedite "sage" v pole imeni chtoby ne podnimat temu.
+    </div>
   </div>
 
 </div>
 
 <div class="footer">
-  QWA &copy; 2025 | Powered by nothing fancy
+  QWA Forum &copy; 2025 | No registration. No emojis. No bullshit.
 </div>
 
 </body>
