@@ -15,7 +15,7 @@ async function initDB() {
     db = new SQL.Database();
   }
 
-  // === ТАБЛИЦЫ ===
+  // === TABLICY ===
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -67,30 +67,29 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // === ДЕФОЛТНЫЕ БОРДЫ ===
+  // === DEFAULT BOARDS ===
   const r = db.exec("SELECT COUNT(*) FROM boards");
   const count = r[0] ? r[0].values[0][0] : 0;
 
   if (count === 0) {
     const boards = [
-    const boards = [
-  ['general',  'Obshiy',           'Razgovory na lyubye temy',                    0, 1],
-  ['roblox',   'Roblox',           'Obsuzhdeniye igr v Roblox',                   0, 2],
-  ['games',    'Igry',             'PC, konsoli, mobilnye igry',                  0, 3],
-  ['politics', 'Politika',         'Politika i obshchestvo',                      0, 4],
-  ['tech',     'Tekhnologii',      'Programmirovanie, zhelezo, soft',             0, 5],
-  ['music',    'Muzyka',           'Muzyka vsekh zhanrov',                        0, 6],
-  ['anime',    'Anime',            'Anime, manga, ranobe',                        0, 7],
-  ['random',   'Random',           'Obo vsem i ni o chem',                        0, 8],
-  ['news',     'Novosti QWA',      'Oficialnye novosti foruma. Tolko adminy',    1, 0]
-];
+      ['general',  'Obshiy',       'Razgovory na lyubye temy',                 0, 1],
+      ['roblox',   'Roblox',       'Obsuzhdeniye igr v Roblox',                0, 2],
+      ['games',    'Igry',         'PC, konsoli, mobilnye igry',               0, 3],
+      ['politics', 'Politika',     'Politika i obshchestvo',                   0, 4],
+      ['tech',     'Tekhnologii',  'Programmirovanie, zhelezo, soft',          0, 5],
+      ['music',    'Muzyka',       'Muzyka vsekh zhanrov',                     0, 6],
+      ['anime',    'Anime',        'Anime, manga, ranobe',                     0, 7],
+      ['random',   'Random',       'Obo vsem i ni o chem',                     0, 8],
+      ['news',     'Novosti QWA',  'Oficialnye novosti foruma. Tolko adminy', 1, 0]
+    ];
     for (const b of boards) {
       db.run("INSERT INTO boards (slug,name,description,admin_only,sort_order) VALUES(?,?,?,?,?)", b);
     }
     save();
   }
 
-  // === СОЗДАЁМ АДМИНА ===
+  // === CREATE ADMIN ===
   const adminCheck = db.exec("SELECT COUNT(*) FROM users WHERE role='admin'");
   const adminCount = adminCheck[0] ? adminCheck[0].values[0][0] : 0;
 
